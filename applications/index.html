@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IT Dashboard</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Fonts -->
+    <link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:300,400' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="../monitor/img/favicon.ico" type="image/x-ico; charset=binary"/>
+    <link rel="icon" href="../monitor/img/favicon.ico" type="image/x-ico; charset=binary"/>
+    <!-- CSS Libs -->
+    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="lib/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="lib/css/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap-switch.min.css">
+    <link rel="stylesheet" type="text/css" href="lib/css/checkbox3.min.css">
+    <!-- CSS App -->
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/themes/flat-blue.css">
+</head>
+
+<body class="flat-blue">
+<div class="app-container">
+    <div class="row content-container">
+        <nav class="navbar navbar-default navbar-fixed-top navbar-top">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-expand-toggle">
+                        <i class="fa fa-bars icon"></i>
+                    </button>
+                    <ol class="breadcrumb navbar-breadcrumb">
+                        <li class="active">IT-Dashboard - Applications</li>
+                    </ol>
+                </div>
+                <ul class="nav navbar-nav navbar-right">
+                    <button type="button" class="navbar-right-expand-toggle pull-right visible-xs">
+                        <i class="fa fa-times icon"></i>
+                    </button>
+                    <li class="dropdown profile">
+                        <a href="#">
+                            <div id="clock" class="navbar-brand"></div>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="side-menu sidebar-inverse">
+            <nav class="navbar navbar-default fill" role="navigation">
+                <div class="side-menu-container">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="#">
+                            <div class="icon fa fa-tachometer"></div>
+                            <div class="title">IT Dashboard</div>
+                        </a>
+                    </div>
+                    <ul id="navigation" class="nav navbar-nav wrapper">
+                        <li class="active">
+                            <a href="javascript:LoadPage(1);">
+                                <i class="icon fa fa-server"></i><span class="title">PDM</span>
+                            </a>
+                        </li>
+                        <li class="active">
+                            <a href="javascript:LoadPage(2);">
+                                <i class="icon fa fa-server"></i><span class="title">Mobimedia</span>
+                            </a>
+                        </li>
+                        <li class="active">
+                            <a href="javascript:LoadPage(3);">
+                                <i class="icon fa fa-server"></i><span class="title">ERP</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                    <ul class="nav navbar-nav bottom">
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#bugtracker">
+                                <i class="icon fa fa-bug"></i><span class="title">Bug melden</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </nav>
+        </div>
+        <!-- Main Content -->
+        <div class="container-fluid">
+            <div class="side-body padding-top">
+                <!--Load AJAX-->
+                <div id="ajax">
+                    <!-- AJAX Content-->
+                </div>
+                <!-- Bug reporter -->
+                <div class="modal fade" id="bugtracker" role="dialog">
+                    <div class="modal-dialog">
+
+                        <!-- Modal content-->
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title"><i class="icon fa fa-bug"></i> Bug melden</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-lg-6 text-center">
+                                        <a role="button" class="btn btn-lg btn-primary"
+                                           href="mailto:victor.lange@cbr.de?subject=IT-Dashboard%20Bug"><i
+                                                class="fa fa-envelope"></i> Per Mail</a>
+                                    </div>
+                                    <div class="col-lg-6 text-center">
+                                        <a role="button" class="btn btn-lg btn-primary" href="tel:2845"><i
+                                                class="fa fa-phone"></i> Per Telefon</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Schließen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div>
+        <!-- Javascript Libs -->
+        <script type="text/javascript" src="lib/js/jquery.min.js"></script>
+        <script type="text/javascript" src="lib/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="lib/js/bootstrap-switch.min.js"></script>
+        <script type="text/javascript" src="lib/js/jquery.matchHeight-min.js"></script>
+        <!--<script type="text/javascript" src="lib/js/Chart.min.js"></script>-->
+        <script type="text/javascript"
+                src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.bundle.min.js"></script>
+
+        <!-- Javascript -->
+        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript" src="js/ajax.js"></script>
+        <!-- intit -->
+        <script type="text/javascript" src="js/init.js"></script>
+    </div>
+</div>
+</body>
+</html>
