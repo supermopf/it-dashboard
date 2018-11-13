@@ -12,6 +12,7 @@
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/animate.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-switch.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">
+    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-slider.min.css">
     <!-- CSS App -->
     <!--	<link rel="stylesheet" type="text/css" href="../css/style.css">-->
     <!--	<link rel="stylesheet" type="text/css" href="../css/themes/flat-blue.css">-->
@@ -54,7 +55,7 @@
         </nav>
     </div>
     <div class="row">
-        <div class="col-lg-offset-1 col-lg-10">
+        <div class="col-lg-offset-1 col-lg-8">
             <div class="input-group">
                 <input placeholder="Youtube-URL..." type="text" id="yt-message" class="form-control">
                 <span class="input-group-btn">
@@ -62,41 +63,44 @@
                 </span>
             </div>
         </div>
+        <div class="col-lg-3 form-group">
+            <input id="volume" data-slider-id='volumeSlider' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="14"/>
+        </div>
     </div>
     <div class="row">
         <div class="col-lg-offset-1 col-lg-10">
             <table class="table table-bordered"
-            <thead>
-            <tr>
-                <td style="width: 15%;">Thumbnail</td>
-                <td style="width: 40%;">Titel</td>
-                <td style="width: 35%;">URL</td>
-                <td style="width: 10%;">Aktion</td>
-            </tr>
-            </thead>
-            <tbody>
-            <?php
-            foreach (file('C:/scripts/IT-Dashboard/ytlog.txt') as $line) {
-                parse_str($line, $query);
-                reset($query);
-                $url = key($query);
-                echo "<tr>";
-                echo "<td>";
-                echo "<a href='" . $line . "'><img class='img-responsive' src='https://i.ytimg.com/vi/" . $query[$url] . "/hqdefault.jpg' /></a>";
-                echo "</td>";
-                echo "<td>";
-                echo get_youtube_details($query[$url], "title");
-                echo "</td>";
-                echo "<td>";
-                echo "$line";
-                echo "</td>";
-                echo "<td>";
-                echo "<div class=\"btn-group\"><button yturl='".$line."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
-                echo "</td>";
-                echo "</tr>";
-            }
-            ?>
-            </tbody>
+                <thead>
+                <tr>
+                    <td style="width: 15%;">Thumbnail</td>
+                    <td style="width: 40%;">Titel</td>
+                    <td style="width: 35%;">URL</td>
+                    <td style="width: 10%;">Aktion</td>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                foreach (file('C:/scripts/IT-Dashboard/ytlog.txt') as $line) {
+                    parse_str($line, $query);
+                    reset($query);
+                    $url = key($query);
+                    echo "<tr>";
+                    echo "<td>";
+                    echo "<a href='" . $line . "'><img class='img-responsive' src='https://i.ytimg.com/vi/" . $query[$url] . "/hqdefault.jpg' /></a>";
+                    echo "</td>";
+                    echo "<td>";
+                    echo get_youtube_details($query[$url], "title");
+                    echo "</td>";
+                    echo "<td>";
+                    echo "$line";
+                    echo "</td>";
+                    echo "<td>";
+                    echo "<div class=\"btn-group\"><button yturl='".$line."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
+                    echo "</td>";
+                    echo "</tr>";
+                }
+                ?>
+                </tbody>
             </table>
         </div>
     </div>
@@ -117,8 +121,10 @@ function get_youtube_details($ref, $detail)
 }
 
 ?>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="../monitor/lib/js/jquery.min.js"></script>
+<script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
 <script>
+    var sliding = false;
     function clean(obj) {
         var propNames = Object.getOwnPropertyNames(obj);
         for (var i = 0; i < propNames.length; i++) {
@@ -158,6 +164,19 @@ function get_youtube_details($ref, $detail)
     });
 
     $(document).ready(function () {
+        $("#volume").slider();
+        $('#volume').on("click touchstart slideStop", function (sliderValue) {
+            sliding = false;
+            var volume = sliderValue.value / 100;
+            var msg = {
+                message: '!var Radiovolume ' + volume
+            };
+            websocket.send(JSON.stringify(msg));
+        });
+
+        $('#volume').on("slideStart", function (sliderValue) {
+            sliding = true;
+        });
         //create a new WebSocket object.
         var wsUri = "wss://it-dashboard.cbr.de:8999";
         websocket = new WebSocket(wsUri);
@@ -188,6 +207,11 @@ function get_youtube_details($ref, $detail)
                     message: '!reg [YouTube]'
                 };
                 websocket.send(JSON.stringify(msg));
+            }
+            if(type === 'update'){
+                if (!sliding) {
+                    $('#volume').slider('setValue', msg.Radiovolume * 100)
+                }
             }
         };
     });

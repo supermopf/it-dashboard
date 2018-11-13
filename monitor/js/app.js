@@ -342,7 +342,7 @@ $(document).ready(function () {
                 player.setVolume(volume * 100)
             }
 
-            if (msg.Radio === "true") {
+            if (msg.Radio === "true" && YTRunning === "false") {
                 radio.volume = msg.Radiovolume;
 
 
