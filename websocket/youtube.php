@@ -55,6 +55,16 @@
     </div>
     <div class="row">
         <div class="col-lg-offset-1 col-lg-10">
+            <div class="input-group">
+                <input placeholder="Youtube-URL..." type="text" id="yt-message" class="form-control">
+                <span class="input-group-btn">
+                    <button id="yt-btn" class="btn btn-success" type="button">Play</button>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-offset-1 col-lg-10">
             <table class="table table-bordered"
             <thead>
             <tr>
@@ -136,6 +146,17 @@ function get_youtube_details($ref, $detail)
             data: json
         });
     });
+    $('#yt-btn').click(function () { //use clicks message send button
+        var mymessage = $('#yt-message').val(); //get message text
+        $('#yt-message').val("");
+        //prepare json data
+        var msg = {
+            message: '!video ' + mymessage
+        };
+        //convert and send data to server
+        websocket.send(JSON.stringify(msg));
+    });
+
     $(document).ready(function () {
         //create a new WebSocket object.
         var wsUri = "wss://it-dashboard.cbr.de:8999";
