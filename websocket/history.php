@@ -23,10 +23,38 @@
 </head>
 <body>
 <div class="container-fluid">
+    <div class="row" style="margin-top: 0">
+        <nav class="navbar navbar-default navbar-static-top">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">IT-Dashboard</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="./history.php">History</a></li>
+                        <li><a href="./best.php">Best</a></li>
+                        <li><a href="./youtube.php">YouTube</a></li>
+                        <li><a href="./index.php">Adminpanel</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
+                        <li>
+                            <p class="navbar-btn">
+                                <button class="btn btn-default" id="reload">Reload</button>
+                            </p>
+                        </li>
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div><!--/.container-fluid -->
+        </nav>
+    </div>
     <div class="row">
         <div class="col-lg-12">
-            <a href="best.php">Best Toasts</a>
-            <button id="reload">Reload</button>
             <?php
             $history = array();
             $i = 0;

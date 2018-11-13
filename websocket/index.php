@@ -30,6 +30,36 @@
 <!--<input type="text" name="message" id="message" />-->
 <!--<button id="send-btn">Senden</button>-->
 <div class="container-fluid">
+    <div class="row" style="margin-top: 0">
+        <nav class="navbar navbar-default navbar-static-top">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">IT-Dashboard</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="./history.php">History</a></li>
+                        <li><a href="./best.php">Best</a></li>
+                        <li><a href="./youtube.php">YouTube</a></li>
+                        <li class="active"><a href="./index.php">Adminpanel</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
+                        <li>
+                            <p class="navbar-btn">
+                                <button class="btn btn-default" id="reload">Reload</button>
+                            </p>
+                        </li>
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div><!--/.container-fluid -->
+        </nav>
+    </div>
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -136,6 +166,33 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 
 <script language="javascript" type="text/javascript">
+    function clean(obj) {
+        var propNames = Object.getOwnPropertyNames(obj);
+        for (var i = 0; i < propNames.length; i++) {
+            var propName = propNames[i];
+            if (obj[propName] === null || obj[propName] === undefined || obj[propName] === "") {
+                delete obj[propName];
+            }
+        }
+    }
+    $('#reload').click(function () {
+        var id = $(this).attr('id');
+        var json = {
+            ToastSubject: ($('#ToastSubject' + id).html()),
+            ToastBody: ("\<script\>location.reload\(\)\<\/script\>")
+        };
+        clean(json);
+        $.ajax({
+            url: 'api.php',
+            type: 'post',
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (data) {
+                //nothing
+                console.log(JSON.stringify(json));
+            },
+            data: json
+        });
+    });
 
     function LogToConsole(msg) {
         document.getElementById("console").innerHTML += msg + "\n";
@@ -153,7 +210,7 @@
 
     $(document).ready(function () {
         //create a new WebSocket object.
-        var wsUri = "ws://it-dashboard.cbr.de:9000";
+        var wsUri = "wss://it-dashboard.cbr.de:8999";
         websocket = new WebSocket(wsUri);
 
         websocket.onopen = function (ev) { // connection is open
