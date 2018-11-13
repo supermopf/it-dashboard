@@ -150,7 +150,7 @@ function get_youtube_details($ref, $detail)
         $('.repeat').click(function () {
             yturl = $(this).attr('yturl');
             var msg = {
-                message: '!video ' + yturl
+                message: '!video ' + yturl.replace(/(\r\n\t|\n|\r\t)/gm,"")
             };
             websocket.send(JSON.stringify(msg));
         });
@@ -162,7 +162,7 @@ function get_youtube_details($ref, $detail)
             var type = msg.type; //message type
             var message = msg.message; //message text
 
-            if (type == 'auth') {
+            if (type === 'auth') {
                 msg = {
                     message: '!reg [YouTube]'
                 };
