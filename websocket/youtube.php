@@ -69,7 +69,7 @@
     </div>
     <div class="row">
         <div class="col-lg-offset-1 col-lg-10">
-            <table class="table table-bordered"
+            <table class="table table-bordered">
                 <thead>
                 <tr>
                     <td style="width: 15%;">Thumbnail</td>
@@ -80,7 +80,8 @@
                 </thead>
                 <tbody>
                 <?php
-                foreach (file('C:/scripts/IT-Dashboard/ytlog.txt') as $line) {
+                $history = array_reverse(file('C:/scripts/IT-Dashboard/ytlog.txt'));
+                foreach ($history as $line) {
                     parse_str($line, $query);
                     reset($query);
                     $url = key($query);
