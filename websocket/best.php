@@ -55,6 +55,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "delete") {
                         <li class="active"><a href="./best.php">Best</a></li>
                         <li><a href="./youtube.php">YouTube</a></li>
                         <li><a href="./index.php">Adminpanel</a></li>
+                        <li><a href="./features.php">Feature Request</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
                         <li>
