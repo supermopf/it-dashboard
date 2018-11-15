@@ -112,11 +112,9 @@ if ($conn) {
                             <h4 class="modal-title" id="myModalLabel">Neues Feature</h4>
                         </div>
                         <div class="modal-body">
-                            <form action="features.php" method="post" id="feature">
-                                <div class="form-group">
-                                    <textarea class="form-control" rows="5" id="featuretext" name="Feature" placeholder="Beschreibe bitte deinen Wunsch..."></textarea>
-                                </div>
-                            </form>
+                            <div class="form-group">
+                                <textarea class="form-control" rows="5" id="featuretext" placeholder="Beschreibe bitte deinen Wunsch..."></textarea>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-default" data-dismiss="modal">Abbrechen</button>
@@ -129,7 +127,7 @@ if ($conn) {
     </div>
     <div class="row">
         <div class="col-lg-10 col-lg-offset-1">
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover table-striped">
                 <thead>
                 <tr>
                     <th style="width: 10%">ID</th>
@@ -145,11 +143,20 @@ if ($conn) {
                             echo "<td>".$feature["ID"]."</td>";
                             echo "<td>".$feature["FeatureRequest"]."</td>";
                             echo "<td>".$feature["State"]."</td>";
-                            echo "<td><div class='btn-group'  role='group'>";
+                            echo "<td>";
+                            if($feature["State"] == "Offen"){
+                                echo "<div class='btn-group'  role='group'>";
+                                    echo "<button class='btn btn-danger abortrequest' data-id='".$feature["ID"]."'>Abbrechen</button>";
+                                    echo "<button class='btn btn-primary inprogress' data-id='".$feature["ID"]."'>Bearbeitung</button>";
+                                echo "</div>";
+                            }
+                            if($feature["State"] == "In Bearbeitung"){
+                                echo "<div class='btn-group'  role='group'>";
                                 echo "<button class='btn btn-danger abortrequest' data-id='".$feature["ID"]."'>Abbrechen</button>";
-                                echo "<button class='btn btn-primary inprogress' data-id='".$feature["ID"]."'>Bearbeitung</button>";
                                 echo "<button class='btn btn-success closerequest' data-id='".$feature["ID"]."'>Abschließen</button>";
-                            echo "</div></td>";
+                                echo "</div>";
+                            }
+                            echo "</td>";
                         echo "</tr>";
                     }
                 ?>
@@ -166,6 +173,18 @@ if ($conn) {
     });
     $("#newfeature").click(function() {
         $("#feature").submit();
+        json = {
+            Feature: $('#featuretext').val()
+        };
+        $.ajax({
+            url: 'features.php',
+            type: 'post',
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (data) {
+                location.reload();
+            },
+            data: json
+        });
     });
     $(".closerequest").click(function() {
         json = {
