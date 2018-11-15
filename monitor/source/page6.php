@@ -27,12 +27,17 @@ if ($conn) {
 }
 ?>
 <div class="row">
+    <div class="col-lg-12">
+        Seite <span id="CurrentPage"></span> von <span id="PageCount"></span>
+    </div>
+</div>
+<div class="row">
     <!--  Criticals  -->
     <div class="col-lg-12">
         <div id="wrapper">
             <div id="slider1" class="content" style="display: none;">
                 <?php
-                $allowed = 20;
+                $allowed = 15;
                 $objects = 0;
                 $sliderid = 1;
                 $lasthostname = "";
@@ -85,26 +90,8 @@ if ($conn) {
 <script>
     var i = 0;
     var PageCount = <?php echo $sliderid; ?>;
-
-
-    function CyclePages() {
-        if (i == 0) {
-            $('#slider1').show();
-            i++;
-        } else {
-            if (PageCount > 1) {
-                $('#slider' + i).hide();
-                if (i >= PageCount) {
-                    i = 1;
-                }
-                else {
-                    i++;
-                }
-                $('#slider' + i).show();
-                $('#slider' + i).animateCss('bounceInRight');
-            }
-        }
-    }
+    $('#PageCount').html(PageCount);
+    $('#CurrentPage').html(i);
 
     CyclePages();
 </script>

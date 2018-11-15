@@ -15,6 +15,29 @@ var CurrentPage = 0;
 var rnd = 1;
 var YTRunning = false;
 
+
+
+
+function CyclePages() {
+    if (i === 0) {
+        $('#slider1').show();
+        i++;
+    } else {
+        if (PageCount > 1) {
+            $('#slider' + i).hide();
+            if (i >= PageCount) {
+                i = 1;
+            }
+            else {
+                i++;
+            }
+            $('#slider' + i).show();
+            $('#slider' + i).animateCss('bounceInRight');
+        }
+    }
+    $('#CurrentPage').html(i);
+}
+
 function LoadPage(pagenumber, src) {
     rnd = Math.floor((Math.random() * 5) + 1);
     if (!Freeze) {
@@ -342,11 +365,11 @@ $(document).ready(function () {
                 player.setVolume(volume * 100)
             }
 
-            if (msg.Radio === "true" && YTRunning === "false") {
+            if (msg.Radio === "true" && YTRunning === false && getURLParameter('Name') === "Main") {
                 radio.volume = msg.Radiovolume;
 
 
-                if (msg.Radiostation != radio_station) {
+                if (msg.Radiostation !== radio_station) {
                     radio_station = msg.Radiostation;
                     radio.setAttribute("src", msg.Radiostation);
                     radio.load();
@@ -380,7 +403,7 @@ $(document).ready(function () {
             }
 
 
-            if (CurrentPage === 6 && (msg.CD % 10) === 0) {
+            if (CurrentPage === "6" && (msg.CD % 10) === 0) {
                 CyclePages();
             }
             if (msg.Cycle === "true") {
