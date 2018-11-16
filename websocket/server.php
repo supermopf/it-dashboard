@@ -30,7 +30,8 @@ $BusActive = False;
 $lasttimestamp = strtotime("now");
 $Radio = False;
 $Radiostation = "https://ndr-ndr1niedersachsen-hannover.cast.addradio.de/ndr/ndr1niedersachsen/hannover/mp3/128/stream.mp3";
-$Radiovolume = 0.5;
+$Radiovolume = 0.05;
+$ForwardedIP = "";
 
 define("Debug", True);
 /*
@@ -45,6 +46,7 @@ $CycleTime = 30;
 
 
 $registered = array();
+$ProxyMatch = array();
 
 
 function LogDebug($message, $LogLevel = 3)
@@ -76,9 +78,16 @@ while (true) {
         $clients[] = $socket_new; //add socket to client array
 
         $header = socket_read($socket_new, 1024); //read data sent by the socket
-        perform_handshaking($header, $socket_new, $host, $port); //perform websocket handshake
+        perform_handshaking($header, $socket_new, $host, $port, $ForwardedIP); //perform websocket handshake
 
-        socket_getpeername($socket_new, $ip, $port); //get ip address of connected socket
+        $Connection = explode(":",$ForwardedIP);
+        $ip = $Connection[0];
+        $port = $Connection[1];
+
+        socket_getpeername($socket_new, $proxyip, $proxyport);
+
+        $ProxyMatch[$proxyip . ":" . $proxyport] = array('IP' => $ip,'Port' => $port);
+
         $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $port . ' (' . gethostbyaddr($ip) . ') connected (' . (count($clients) - 1) . ' Clients)'))); //prepare json data
         LogDebug($ip . " verbunden (" . count($clients) . " Clients)", 2);
         send_message($response); //notify all users about new connection
@@ -200,24 +209,27 @@ while (true) {
                         $split = explode(" ", $user_message);
                         $name = $split[1];
 
-                        $registered[$ip . ":" . $port] = $name;
+                        $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+
+                        $registered[$RealIP] = $name;
                     }
                 } elseif ($user_message == "!clientlist") {
                     foreach ($clients as $clt) {
                         if ($clt != $clients[0]) {
                             socket_getpeername($clt, $ip, $port);
+                            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
 
-                            if (isset($registered[$ip . ":" . $port])) {
+                            if (isset($registered[$RealIP])) {
                                 $var_array = array(
                                     "type" => "clientlist",
-                                    "message" => "<tr><td>" . $ip . ":$port</td><td>" . gethostbyaddr($ip) . "</td><td>" . $registered[$ip . ":" . $port] . "</td></tr>"
+                                    "message" => "<tr><td>" . $RealIP . "</td><td>" . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . "</td><td>" . $registered[$RealIP] . "</td></tr>"
                                 );
                                 $command = mask(json_encode($var_array));
                                 send_message($command);
                             } else {
                                 $var_array = array(
                                     "type" => "clientlist",
-                                    "message" => "<tr><td>" . $ip . ":$port</td><td>(" . gethostbyaddr($ip) . ")</td><td>?</td></tr>"
+                                    "message" => "<tr><td>" . $RealIP . "</td><td>(" . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . ")</td><td>?</td></tr>"
                                 );
                                 $command = mask(json_encode($var_array));
                                 send_message($command);
@@ -306,8 +318,10 @@ while (true) {
             unset($clients[$found_socket]);
             socket_close($changed_socket);
 
+            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+
             //notify all users about disconnected connection
-            $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $port . ' (' . gethostbyaddr($ip) . ') disconnected')));
+            $response = mask(json_encode(array('type' => 'console', 'message' => $RealIP . ' (' . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . ') disconnected')));
             LogDebug($ip . " getrennt", 2);
             send_message($response);
         }
@@ -373,7 +387,7 @@ function mask($text)
 }
 
 //handshake new client.
-function perform_handshaking($receved_header, $client_conn, $host, $port)
+function perform_handshaking($receved_header, $client_conn, $host, $port, &$ForwardedIP)
 {
     $headers = array();
     $lines = preg_split("/\r\n/", $receved_header);
@@ -383,7 +397,9 @@ function perform_handshaking($receved_header, $client_conn, $host, $port)
             $headers[$matches[1]] = $matches[2];
         }
     }
-
+    if (isset($headers['X-Forwarded-For'])) {
+        $ForwardedIP = $headers['X-Forwarded-For'];
+    }
     if (isset($headers['Sec-WebSocket-Key'])) {
         $secKey = $headers['Sec-WebSocket-Key'];
         $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
