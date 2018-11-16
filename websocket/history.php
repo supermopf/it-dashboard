@@ -95,7 +95,7 @@
                 }
                 if (isset($line->ToastPicture)) {
                     if (strpos($line->ToastPicture, 'mp4') == true || strpos($line->ToastPicture, 'webm') == true) {
-                        echo '<td><video controls id="ToastPicture' . $i . '" style="height: 150px" src="' . htmlspecialchars($line->ToastPicture) . '"></video>></td>';
+                        echo '<td><video controls id="ToastPicture' . $i . '" style="height: 150px" src="' . htmlspecialchars($line->ToastPicture) . '"></video></td>';
                     } else {
                         echo '<td><img id="ToastPicture' . $i . '" style="height: 150px" src="' . htmlspecialchars($line->ToastPicture) . '" /></td>';
                     }
