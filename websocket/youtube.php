@@ -171,7 +171,7 @@ function get_youtube_details($ref, $detail)
             sliding = false;
             var volume = sliderValue.value / 100;
             var msg = {
-                message: '!var Radiovolume ' + volume
+                message: '!var YTvolume ' + volume
             };
             websocket.send(JSON.stringify(msg));
         });
@@ -212,7 +212,7 @@ function get_youtube_details($ref, $detail)
             }
             if(type === 'update'){
                 if (!sliding) {
-                    $('#volume').slider('setValue', msg.Radiovolume * 100)
+                    $('#volume').slider('setValue', msg.YTvolume * 100)
                 }
             }
         };

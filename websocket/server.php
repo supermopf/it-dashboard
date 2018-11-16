@@ -31,6 +31,7 @@ $lasttimestamp = strtotime("now");
 $Radio = False;
 $Radiostation = "https://ndr-ndr1niedersachsen-hannover.cast.addradio.de/ndr/ndr1niedersachsen/hannover/mp3/128/stream.mp3";
 $Radiovolume = 0.05;
+$YTvolume = 0.5;
 $ForwardedIP = "";
 
 define("Debug", True);
@@ -152,6 +153,7 @@ while (true) {
             "Radio" => $Radio ? 'true' : 'false',
             "Radiostation" => $Radiostation,
             "Radiovolume" => $Radiovolume,
+            "YTvolume" => $YTvolume,
             "Cat" => $Cat ? 'true' : 'false',
             "Snow" => $Snow ? 'true' : 'false',
             "BusActive" => $BusActive ? 'true' : 'false',

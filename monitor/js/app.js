@@ -6,6 +6,7 @@ var radio_running = false;
 var radio_station = "https://ndr-ndr1niedersachsen-hannover.cast.addradio.de/ndr/ndr1niedersachsen/hannover/mp3/128/stream.mp3";
 var radio = new Audio(radio_station);
 var volume;
+var YTvolume;
 var Page_AJAX;
 var Freeze = false;
 var PageCount = $("#navigation li").length;
@@ -361,8 +362,9 @@ $(document).ready(function () {
             }
 
             volume = msg.Radiovolume;
+            YTvolume = msg.YTvolume;
             if (YTRunning) {
-                player.setVolume(volume * 100)
+                player.setVolume(YTvolume * 100)
             }
 
             if (msg.Radio === "true" && YTRunning === false && getURLParameter('Name') === "Main") {
