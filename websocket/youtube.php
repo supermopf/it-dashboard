@@ -86,18 +86,21 @@
                     parse_str($line, $query);
                     reset($query);
                     $url = key($query);
+                    $result = get_youtube_details($query[$url], "title");
                     echo "<tr>";
                     echo "<td>";
                     echo "<a href='" . $line . "'><img class='img-responsive' src='https://i.ytimg.com/vi/" . $query[$url] . "/hqdefault.jpg' /></a>";
                     echo "</td>";
                     echo "<td>";
-                    echo get_youtube_details($query[$url], "title");
+                    echo $result;
                     echo "</td>";
                     echo "<td>";
                     echo "$line";
                     echo "</td>";
                     echo "<td>";
-                    echo "<div class=\"btn-group\"><button yturl='".$line."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
+                    if($result != "Video nicht abspielbar"){
+                        echo "<div class=\"btn-group\"><button yturl='".$line."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
+                    }
                     echo "</td>";
                     echo "</tr>";
                 }
@@ -115,7 +118,11 @@
 function get_youtube_details($ref, $detail)
 {
     if (!isset($GLOBALS['youtube_details'][$ref])) {
-        $json = file_get_contents('https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=' . urlencode($ref) . '&format=json'); //get JSON video details
+        $json = @file_get_contents('https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=' . urlencode($ref) . '&format=json');
+        if($json === false)
+        {
+            return "Video nicht abspielbar";
+        }
         $GLOBALS['youtube_details'][$ref] = json_decode($json, true); //parse the JSON into an array
     }
 

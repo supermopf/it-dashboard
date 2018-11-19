@@ -72,15 +72,8 @@ parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
 
 
     function catchError(event) {
-        if (event.data == 100) {
-            //DONE
-            var msg = {
-                message: "!var YT False"
-            };
-            //convert and send data to server
-            websocket.send(JSON.stringify(msg));
-            console.log("Video existiert nicht mehr");
-        }
+        YTRunning = false;
+        LoadPage(CurrentPage);
     }
 
 
