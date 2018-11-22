@@ -70,7 +70,7 @@ if ($conn) {
 <body>
 <div class="container-fluid">
     <div class="row" style="margin-top: 0">
-        <nav class="navbar navbar-default navbar-static-top">
+        <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container-fluid">
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -100,7 +100,7 @@ if ($conn) {
             </div><!--/.container-fluid -->
         </nav>
     </div>
-    <div class="row">
+    <div class="row" style="margin-top: 5%;">
         <div class="col-lg-10 col-lg-offset-1">
             <button id="opennew" class="btn btn-primary">Neues Feature</button>
             <!-- Modal -->
