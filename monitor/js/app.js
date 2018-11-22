@@ -39,16 +39,21 @@ function CyclePages() {
     $('#CurrentPage').html(i);
 }
 
-function LoadPage(pagenumber, src) {
+function LoadPage(pagenumber, src, debug=false) {
     rnd = Math.floor((Math.random() * 5) + 1);
-    if (!Freeze) {
+    if(debug){
+        folder = 'source'
+    }else{
+        folder = 'cache'
+    }
+    if (!Freeze || debug) {
         if (!YTRunning) {
             //Seite laden
             Page_AJAX = $.ajax({
                 async: true,
                 type: "GET",
                 data: {src: src},
-                url: "./cache/page" + pagenumber + ".php",
+                url: "./"+ folder +"/page" + pagenumber + ".php",
                 success: function (result) {
                     //active entfernen
                     $("#navigation>li.active").removeClass("active");

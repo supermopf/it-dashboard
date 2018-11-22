@@ -14,8 +14,57 @@ $connectionInfo = array("Database" => HELPLINE_SQL_DATABASE, "CharacterSet" => "
 $conn = sqlsrv_connect($serverName, $connectionInfo);
 
 if ($conn) {
-    //Haben wir Kontakt?
-    if ($result = sqlsrv_query($conn, "SELECT TOP 18 * FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
+    if ($result = sqlsrv_query($conn,"
+        SELECT COUNT (referencenumber) AS NewTickets
+        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
+        WHERE referencenumber LIKE FORMAT(GETDATE(), 'yyyyMMdd')+'%' 
+        AND [keyword] NOT LIKE 'zz_%'  
+        AND [keyword] NOT LIKE 'ERP%'
+        AND [keyword] NOT LIKE 'Programmierung%'
+        AND [keyword] NOT LIKE 'PDM%'
+        AND [keyword] NOT LIKE 'Facili%'
+        AND [keyword] NOT LIKE 'Mobi%'
+        AND [keyword] NOT LIKE 'OMS%'
+        AND [keyword] NOT LIKE 'ECM%'
+        AND [keyword] NOT LIKE 'BI%'
+        AND [keyword] NOT LIKE 'DPL%'
+        AND [keyword] NOT LIKE 'EDI%'
+        AND [keyword] NOT LIKE 'CST%'"
+    )) {
+        $NewTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+    } else {
+        echo "<pre>";
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+
+
+    if ($result = sqlsrv_query($conn,"
+        SELECT Count([referencenumber]) as ClosedTickets
+        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
+        WHERE  CAST([closingtime] AS DATE) = CAST (GETDATE() as DATE)
+        AND [keyword] NOT LIKE 'zz_%'  
+        AND [keyword] NOT LIKE 'ERP%'
+        AND [keyword] NOT LIKE 'Programmierung%'
+        AND [keyword] NOT LIKE 'PDM%'
+        AND [keyword] NOT LIKE 'Facili%'
+        AND [keyword] NOT LIKE 'Mobi%'
+        AND [keyword] NOT LIKE 'OMS%'
+        AND [keyword] NOT LIKE 'ECM%'
+        AND [keyword] NOT LIKE 'BI%'
+        AND [keyword] NOT LIKE 'DPL%'
+        AND [keyword] NOT LIKE 'EDI%'
+        AND [keyword] NOT LIKE 'CST%'"
+    )) {
+        $ClosedTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+    } else {
+        echo "<pre>";
+        die(print_r(sqlsrv_errors(), true));
+    }
+
+
+
+    if ($result = sqlsrv_query($conn, "SELECT TOP 10 * FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
       WHERE [state] IN ('Offen', 'Zu prüfen') AND ((
              reservedby IN ('CHRISTIAN FORNER',
                                   'STEFAN AMTMANN',
@@ -89,6 +138,29 @@ if ($conn) {
     die(print_r(sqlsrv_errors(), true));
 }
 ?>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card dark summary-inline">
+            <div class="card-body">
+                <div class="content">
+                    <div class="title">Heute geöffnete Tickets</div>
+                    <div class="title"><?php echo $NewTickets["NewTickets"]; ?></div>
+                </div>
+                <div class="clear-both"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card dark summary-inline">
+            <div class="card-body">
+                <div class="content">
+                    <div class="title">Heute geschlossene Tickets</div>
+                    <div class="title"><?php echo $ClosedTickets["ClosedTickets"]; ?></div>
+                </div>
+                <div class="clear-both"></div>
+            </div>
+        </div>
+    </div>
 <div class="row">
     <div class="col-lg-12">
         <!-- Table -->
