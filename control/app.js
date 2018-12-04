@@ -1,5 +1,5 @@
 var sliding = false;
-
+var ImageMatch = new Array ();
 
 $("#busdiv").hide();
 
@@ -14,8 +14,10 @@ $(document).ready(function () {
     // Populate dropdown with list of provinces
     $.getJSON(url, function (data) {
         $.each(data, function (key, entry) {
+            ImageMatch[entry.url] = entry["tvg-logo"];
             dropdown.append($('<option></option>').attr('value', entry.url).text(entry["tvg-name"]));
         })
+
     });
 
 
@@ -131,6 +133,14 @@ $(document).ready(function () {
         //convert and send data to server
         websocket.send(JSON.stringify(msg));
     });
+    $('#titlebtn').bind("click touchstart", function () { //use clicks message send button
+        //prepare json data
+        var msg = {
+            message: '!songtitle now'
+        };
+        //convert and send data to server
+        websocket.send(JSON.stringify(msg));
+    });
 
     $("#volume").slider({
         tooltip: "hide"
@@ -183,6 +193,10 @@ $(document).ready(function () {
         var valueSelected = this.value;
         var msg = {
             message: '!var Radiostation ' + valueSelected
+        };
+        websocket.send(JSON.stringify(msg));
+        var msg = {
+            message: '!var RadioStationIcon ' + ImageMatch[valueSelected]
         };
         websocket.send(JSON.stringify(msg));
     });

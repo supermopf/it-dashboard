@@ -90,7 +90,9 @@
             <label class="col-sm-6 control-label vcenter" for="funmode_checkbox">FUN-Mode</label>
             <input class="col-sm-6 checkbox" type="checkbox" id="funmode_checkbox" data-toggle="toggle">
         </div>
-
+        <div class="col-sm-1">
+            <button class="btn btn-block" id="titlebtn" style="margin:0px;">Songtitel</button>
+        </div>
         <div class="col-sm-6 form-group">
             <select id="radiostations" class="form-control"></select>
         </div>
@@ -100,7 +102,7 @@
             <label class="col-sm-6 control-label vcenter" for="cycle_checkbox">Seitenwechsel</label>
             <input class="col-sm-6 checkbox" id="cycle_checkbox" type="checkbox" data-toggle="toggle">
         </div>
-        <div class="col-sm-4 form-group">
+        <div class="col-sm-2 form-group">
             <input id="volume" data-slider-id='volumeSlider' type="text" data-slider-min="1" data-slider-max="100"
                    data-slider-step="1" data-slider-value="14"/>
         </div>

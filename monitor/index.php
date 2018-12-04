@@ -176,6 +176,7 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
             </div>
         </div>
     </div>
+    <div id="toast"><div id="toastimg"></div><div id="toastdesc"></div></div>
     <div id="buscontainer"><img id="bus" class="flip" src="./img/bus.gif"></div>
     <div>
         <!-- Javascript Libs -->

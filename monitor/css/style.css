@@ -1937,3 +1937,93 @@ td {
     vertical-align: middle;
     float: none;
 }
+
+#toast {
+    visibility: hidden;
+    max-width: 100px;
+    height: 100px;
+    /*margin-left: -125px;*/
+    margin: auto;
+    background-color: rgba(51,51,51,0.9);
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+
+    position: fixed;
+    z-index: 1;
+    left: 0;right:0;
+    bottom: 30px;
+    font-size: 17px;
+    white-space: nowrap;
+}
+#toast #toastimg img{
+    width: 100px;
+    height: 100px;
+
+    float: left;
+    box-sizing: border-box;
+    background-color: rgba(17,17,17,0.9);
+    color: #fff;
+}
+#toast #toastdesc{
+    color: #fff;
+    line-height: 100px;
+    font-size: 20pt;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#toast.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, expand 0.5s 0.5s,stay 10s 1s, shrink 0.5s 11s, fadeout 0.5s 11.5s;
+    animation: fadein 0.5s, expand 0.5s 0.5s,stay 10s 1s, shrink 0.5s 11s, fadeout 0.5s 11.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes expand {
+    from {min-width: 50px}
+    to {min-width: 750px}
+}
+
+@keyframes expand {
+    from {min-width: 50px}
+    to {min-width: 750px}
+}
+@-webkit-keyframes stay {
+    from {min-width: 750px}
+    to {min-width: 750px}
+}
+
+@keyframes stay {
+    from {min-width: 750px}
+    to {min-width: 750px}
+}
+@-webkit-keyframes shrink {
+    from {min-width: 750px;}
+    to {min-width: 50px;}
+}
+
+@keyframes shrink {
+    from {min-width: 500px;}
+    to {min-width: 50px;}
+}
+
+@-webkit-keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 60px; opacity: 0;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 60px; opacity: 0;}
+}
+

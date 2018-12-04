@@ -15,7 +15,7 @@ var FUN = false;
 var CurrentPage = 0;
 var rnd = 1;
 var YTRunning = false;
-
+var SongTitle = "";
 
 
 
@@ -232,6 +232,9 @@ $(document).ready(function () {
                         LoadPage(message);
                     }
                     break;
+                case "!songtitle":
+                    show_toast();
+                    break;
                 case "!urgent":
                     var audio;
                     if (getURLParameter('Name') === "Main") {
@@ -278,7 +281,6 @@ $(document).ready(function () {
                         } else {
                             audio.volume = 0.5;
                         }
-
                         audio.play();
 
                         $('#myModal').modal('show');
@@ -372,6 +374,11 @@ $(document).ready(function () {
                 player.setVolume(YTvolume * 100)
             }
 
+            if (msg.SongTitle !== SongTitle && radio_running) {
+                SongTitle = msg.SongTitle;
+                launch_toast(msg.RadioStationIcon,msg.SongTitle)
+            }
+
             if (msg.Radio === "true" && YTRunning === false && getURLParameter('Name') === "Main") {
                 radio.volume = msg.Radiovolume;
 
@@ -456,3 +463,20 @@ $.fn.extend({
         return this;
     }
 });
+
+function launch_toast(imgurl,description) {
+    var x = document.getElementById("toast");
+    x.className = "show";
+    if(imgurl !== undefined) {
+        $('#toastimg').html("<img src='" + imgurl + "'>");
+    }else{
+        $('#toastimg').html("");
+    }
+    $('#toastdesc').html(description);
+    setTimeout(function(){ x.className = x.className.replace("show", "");}, 12000);
+}
+function show_toast(){
+    var x = document.getElementById("toast");
+    x.className = "show";
+    setTimeout(function(){ x.className = x.className.replace("show", "");}, 12000);
+}

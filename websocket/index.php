@@ -121,6 +121,8 @@
                     Radio: <span id="Radio"></span><br/>
                     Radiostation: <span id="Radiostation"></span><br/>
                     Radiovolume: <span id="Radiovolume"></span><br/>
+                    SongTitle: <span id="SongTitle"></span><br/>
+                    RadioStationIcon: <span id="RadioStationIcon"></span><br/>
                 </div>
             </div>
         </div>
@@ -299,6 +301,8 @@
                 $("#Radio").html(msg.Radio);
                 $("#Radiostation").html(msg.Radiostation);
                 $("#Radiovolume").html(msg.Radiovolume);
+                $("#SongTitle").html(msg.SongTitle);
+                $("#RadioStationIcon").html(msg.RadioStationIcon);
             }
             if (type == 'clientlist') {
                 document.getElementById("clientlist").innerHTML += message + "\n";
