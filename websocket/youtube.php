@@ -81,7 +81,7 @@
                 </thead>
                 <tbody>
                 <?php
-                $history = array_reverse(file('C:/scripts/IT-Dashboard/ytlog.txt'));
+                $history = array_unique(array_reverse(file('C:/scripts/IT-Dashboard/ytlog.txt')));
                 foreach ($history as $line) {
                     parse_str($line, $query);
                     reset($query);
