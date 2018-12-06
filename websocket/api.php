@@ -244,6 +244,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <td>0.5</td>
                 <td>Lautstärke von 0 bis 1</td>
             </tr>
+            <tr>
+                <td>ToastHistory</td>
+                <td>POST</td>
+                <td>Nein</td>
+                <td>Boolean</td>
+                <td>true</td>
+                <td>Gibt an, ob der Toast in der History gespeichert werden soll</td>
+            </tr>
         </tbody>
     </table>
 </body>

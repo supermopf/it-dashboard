@@ -315,8 +315,11 @@ while (true) {
                         $obj->ToastPicture = 'https://it-dashboard.cbr.de/websocket/imgcache/' . $hash . "." . $filetype;
                     }
                     $json = json_encode($obj);
-                    $myfile = file_put_contents('C:/scripts/IT-Dashboard/logs.txt', $json . PHP_EOL, FILE_APPEND | LOCK_EX);
-
+                    if (isset($obj->ToastHistory) && $obj->ToastHistory == "false") {
+                        //Do not save
+                    }else{
+                        $myfile = file_put_contents('C:/scripts/IT-Dashboard/logs.txt', $json . PHP_EOL, FILE_APPEND | LOCK_EX);
+                    }
                     $response_text = mask(json_encode(array('type' => 'command', 'message' => '!urgent ' . $json)));
                     send_message($response_text); //send data
                 } else {
