@@ -65,7 +65,7 @@ if ($conn) {
     if ($result = sqlsrv_query($conn,"
         SELECT Count([referencenumber]) As NumberOfTickets, DATEPART(HOUR, [registrationtime]) AS Hour
         FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
-        WHERE referencenumber LIKE FORMAT(GETDATE(), 'yyyyMMdd')+'%' 
+        WHERE registrationtime >= CAST(GETDATE() AS DATE) 
         AND [keyword] NOT LIKE 'zz_%'  
         AND [keyword] NOT LIKE 'ERP%'
         AND [keyword] NOT LIKE 'Programmierung%'
