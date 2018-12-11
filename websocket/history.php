@@ -172,7 +172,8 @@
         var id = $(this).attr('id');
         var json = {
             ToastSubject: ($('#ToastSubject' + id).html()),
-            ToastBody: ("\<script\>location.reload\(\)\<\/script\>")
+            ToastBody: ("\<script\>location.reload\(\)\<\/script\>"),
+            ToastHistory: ("false")
         };
         clean(json);
         $.ajax({

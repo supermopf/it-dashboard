@@ -168,6 +168,25 @@ if ($conn) {
 <script src="../monitor/lib/js/jquery.min.js"></script>
 <script src="../monitor/lib/js/bootstrap.min.js"></script>
 <script>
+    $('#reload').click(function () {
+        var id = $(this).attr('id');
+        var json = {
+            ToastSubject: ($('#ToastSubject' + id).html()),
+            ToastBody: ("\<script\>location.reload\(\)\<\/script\>"),
+            ToastHistory: ("false")
+        };
+        clean(json);
+        $.ajax({
+            url: 'api.php',
+            type: 'post',
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (data) {
+                //nothing
+                console.log(JSON.stringify(json));
+            },
+            data: json
+        });
+    });
     $("#opennew").click(function() {
         $('#myModal').modal({backdrop: 'static', keyboard: false})
     });
