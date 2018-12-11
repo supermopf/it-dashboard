@@ -211,6 +211,37 @@ $ChartData = json_encode($ChartData);
 ?>
 
 <script>
+    const verticalLinePlugin = {
+        getLinePosition: function (chart, pointIndex) {
+            const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
+            const data = meta.data;
+            return data[pointIndex]._model.x;
+        },
+        renderVerticalLine: function (chartInstance, pointIndex) {
+            const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
+            const scale = chartInstance.scales['y-axis-0'];
+            const context = chartInstance.chart.ctx;
+
+            // render vertical line
+            context.beginPath();
+            context.strokeStyle = 'rgba(255,99,132,1)';
+            context.moveTo(lineLeftOffset, scale.top);
+            context.lineTo(lineLeftOffset, scale.bottom);
+            context.stroke();
+
+        },
+
+        afterDatasetsDraw: function (chart, easing) {
+            if (chart.config.lineAtIndex) {
+                chart.config.lineAtIndex.forEach(pointIndex => this.renderVerticalLine(chart, pointIndex));
+            }
+        }
+    };
+
+    Chart.plugins.register(verticalLinePlugin);
+
+
+
 var options = {
     scales: {
         xAxes: [{
@@ -248,9 +279,13 @@ var data = {
     }]
 };
 ctx = $('#TicketChart').get(0).getContext('2d');
+
+var d = new Date();
+var n = d.getHours();
 var TicketChart = new Chart(ctx, {
     type: 'line',
     data: data,
-    options: options
+    options: options,
+    lineAtIndex: [n]
 });
 </script>
