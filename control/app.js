@@ -14,10 +14,9 @@ $(document).ready(function () {
     // Populate dropdown with list of provinces
     $.getJSON(url, function (data) {
         $.each(data, function (key, entry) {
-            ImageMatch[entry.url] = entry["tvg-logo"];
-            dropdown.append($('<option></option>').attr('value', entry.url).text(entry["tvg-name"]));
+            ImageMatch[entry.url] = entry["RadioImage"];
+            dropdown.append($('<option></option>').attr('value', entry["RadioURL"]).text(entry["RadioName"]));
         })
-
     });
 
 

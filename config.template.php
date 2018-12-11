@@ -34,8 +34,6 @@ define("SCCM_SQL_INSTANCE", '');
 define("SCCM_SQL_DATABASE", '');
 
 
-define("RADIOLIST", '');
-
 //Connection Info
 $Default_Connection = array("Database" => DASHBOARD_SQL_INSTANCE, "CharacterSet" => "UTF-8");
 
