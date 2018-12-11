@@ -84,16 +84,6 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="input-group">
-                                <input placeholder="Youtube-URL..." type="text" id="yt-message" class="form-control">
-                                <span class="input-group-btn">
-									<button id="yt-btn" class="btn btn-success" type="button">Play</button>
-								</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="input-group">
                                 <input placeholder="Manueller Befehl..." type="text" id="message" class="form-control">
                                 <span class="input-group-btn">
 									<button id="send-btn" class="btn btn-default" type="button">Senden</button>
@@ -121,6 +111,7 @@
                     Radio: <span id="Radio"></span><br/>
                     Radiostation: <span id="Radiostation"></span><br/>
                     Radiovolume: <span id="Radiovolume"></span><br/>
+                    YTvolume: <span id="YTvolume"></span><br/>
                     SongTitle: <span id="SongTitle"></span><br/>
                     RadioStationIcon: <span id="RadioStationIcon"></span><br/>
                 </div>
@@ -237,17 +228,6 @@
             //convert and send data to server
             websocket.send(JSON.stringify(msg));
         });
-        $('#yt-btn').click(function () { //use clicks message send button
-            var mymessage = $('#yt-message').val(); //get message text
-            $('#yt-message').val("");
-            //prepare json data
-            var msg = {
-                message: '!video ' + mymessage
-            };
-            //convert and send data to server
-            websocket.send(JSON.stringify(msg));
-        });
-
 
         //FUN
 
@@ -303,6 +283,7 @@
                 $("#Radiovolume").html(msg.Radiovolume);
                 $("#SongTitle").html(msg.SongTitle);
                 $("#RadioStationIcon").html(msg.RadioStationIcon);
+                $("#YTvolume").html(msg.YTvolume);
             }
             if (type == 'clientlist') {
                 document.getElementById("clientlist").innerHTML += message + "\n";
