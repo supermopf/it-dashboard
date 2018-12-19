@@ -173,7 +173,7 @@ while (true) {
         $lastsongpull = strtotime("now");
         try {
             $result = getMp3StreamTitle($Radiostation, 19200);
-            if($result != ""){
+            if($result != "" && preg_match("/^.+?\s*-\s*.+$/", $result)){
                 $SongTitle = $result;
             }
         } catch (Exception $e) {
