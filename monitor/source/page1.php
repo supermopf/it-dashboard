@@ -22,28 +22,19 @@ if ($conn) {
         echo "<pre>";
         die(print_r(sqlsrv_errors(), true));
     }
-    //Nummer 2
-    //Haben wir Kontakt?
-    if ($result = sqlsrv_query($conn, "SELECT * FROM (
-                   SELECT *,
-                          row_number() over (partition by Location order by Timestamp DESC) as row_number
-                   FROM [IT-Dashboard].[dbo].[IT-Dashboard_Weather]
-                   ) as rows
-              WHERE row_number = 1")) {
-        $weather = array();
-        while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-            array_push($weather, $row);
-        }
-    } else {
-        echo "<pre>";
-        die(print_r(sqlsrv_errors(), true));
-    }
 } else {
     echo "<pre>";
     die(print_r(sqlsrv_errors(), true));
 }
 
-//UMRÖDELN!
+$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+$oIsernhagen = json_decode($json);
+$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Celle,de&APPID='.APIKEY_openweathermap.'&lang=de');
+$oCelle = json_decode($json);
+
+
+
+
 $numbers = array();
 foreach ($array as $value) {
     $numbers[] = $value["Temperature"];
@@ -54,23 +45,17 @@ $maxnumber = ceil($max / 20);
 
 //IDs mit
 $config = array(
-    1 => "Celle v.R.",
-    2 => "Celle BMZ",
-    3 => "eCommerce",
-    4 => "Sattlerstr. 3",
-    5 => "CECIL MEN", //Big 1
-    6 => "Street One", //Big 2
-    7 => "CECIL" //Big 3
+    1 => "Sattlerstr. 3",
+    2 => "CECIL MEN",
+    3 => "Street One",
+    4 => "CECIL"
 );
 
 $DisplayNameConfig = array(
-    1 => "CBR, Hunäusstr. 5 v.R.",
-    2 => "CBR, Hunäusstr. 5 BMZ",
-    3 => "CBR, eCommerce",
-    4 => "CBR, Sattlerstr. 3",
-    5 => "CECIL MEN",
-    6 => "Street One",
-    7 => "CECIL"
+    1 => "CBR, Sattlerstr. 3",
+    2 => "CECIL MEN",
+    3 => "Street One",
+    4 => "CECIL"
 );
 
 
@@ -84,22 +69,18 @@ foreach ($config as $value) {
     }
     array_push($Values_Now, end($temp_array));
 }
-
-//echo "<pre>";
-//print_r($Values_Now);
-//die();
 ?>
 <div class="row">
     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
         <a href="#">
             <div class="card green summary-inline">
                 <div class="card-body">
-                    <img height="128px" src="<?php echo $weather[0]['ImageURL'] ?>"/>
+                    <img height="128px" src="<?php echo "./img/weather/".$oCelle->weather[0]->icon.".png" ?>"/>
                     <div class="content">
-                        <div class="title"><?php echo $weather[0]['Location'] ?>
-                            : <?php echo $weather[0]['Temperature'] ?> °C
+                        <div class="title"><?php echo $oCelle->name ?>
+                            : <?php echo round(($oCelle->main->temp - 273.15),1) ?> °C
                         </div>
-                        <div class="title"><?php echo $weather[0]['Condition'] ?></div>
+                        <div class="title"><?php echo $oCelle->weather[0]->description ?></div>
                     </div>
                     <div class="clear-both"></div>
                 </div>
@@ -110,12 +91,12 @@ foreach ($config as $value) {
         <a href="#">
             <div class="card yellow summary-inline">
                 <div class="card-body">
-                    <img height="128px" src="<?php echo $weather[1]['ImageURL'] ?>"/>
+                    <img height="128px" src="<?php echo "./img/weather/".$oIsernhagen->weather[0]->icon.".png" ?>"/>
                     <div class="content">
-                        <div class="title"><?php echo $weather[1]['Location'] ?>
-                            : <?php echo $weather[1]['Temperature'] ?> °C
+                        <div class="title"><?php echo $oIsernhagen->name ?>
+                            : <?php echo round(($oIsernhagen->main->temp - 273.15),1) ?> °C
                         </div>
-                        <div class="title"><?php echo $weather[1]['Condition'] ?></div>
+                        <div class="title"><?php echo $oIsernhagen->weather[0]->description ?></div>
                     </div>
                     <div class="clear-both"></div>
                 </div>
@@ -124,124 +105,91 @@ foreach ($config as $value) {
     </div>
 </div>
 <div class="row">
-    <div class="col-sm-3 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[1]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[1] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[1]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[1]["Temperature"]; ?>°C</div>
+    <div class="col-sm-7">
+        <div class="row">
+            <div class="col-sm-6 col-xs-12">
+                <div class="card state-<?php echo $Values_Now[1]["StatusCode"] ?>">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="title">
+                                <div class="col-sm-8"><?php echo $DisplayNameConfig[1] ?></div>
+                                <div class="col-sm-2 blue"><?php echo $Values_Now[1]["Humidity"]; ?>%</div>
+                                <div class="col-sm-2 red"><?php echo $Values_Now[1]["Temperature"]; ?>°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body no-padding">
+                        <canvas id="wetter1" class="chart" width="478" height="260"
+                                style="width: 478px; height: 260px;"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter1" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
+            <div class="col-sm-6 col-xs-12">
+                <div class="card state-<?php echo $Values_Now[2]["StatusCode"] ?>">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="title">
+                                <div class="col-sm-8"><?php echo $DisplayNameConfig[2] ?></div>
+                                <div class="col-sm-2 blue"><?php echo $Values_Now[2]["Humidity"]; ?>%</div>
+                                <div class="col-sm-2 red"><?php echo $Values_Now[2]["Temperature"]; ?>°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body no-padding">
+                        <canvas id="wetter2" class="chart" width="478" height="260"
+                                style="width: 478px; height: 260px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-6 col-xs-12">
+                <div class="card state-<?php echo $Values_Now[3]["StatusCode"] ?>">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="title">
+                                <div class="col-sm-8"><?php echo $DisplayNameConfig[3] ?></div>
+                                <div class="col-sm-2 blue"><?php echo $Values_Now[3]["Humidity"]; ?>%</div>
+                                <div class="col-sm-2 red"><?php echo $Values_Now[3]["Temperature"]; ?>°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body no-padding">
+                        <canvas id="wetter3" class="chart" width="478" height="260"
+                                style="width: 478px; height: 260px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xs-12">
+                <div class="card state-<?php echo $Values_Now[4]["StatusCode"] ?>">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="title">
+                                <div class="col-sm-8"><?php echo $DisplayNameConfig[4] ?></div>
+                                <div class="col-sm-2 blue"><?php echo $Values_Now[4]["Humidity"]; ?>%</div>
+                                <div class="col-sm-2 red"><?php echo $Values_Now[4]["Temperature"]; ?>°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body no-padding">
+                        <canvas id="wetter4" class="chart" width="478" height="260"
+                                style="width: 478px; height: 260px;"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-sm-3 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[2]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[2] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[2]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[2]["Temperature"]; ?>°C</div>
+    <div class="col-sm-5">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="title">Wetter</div>
                     </div>
                 </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter2" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-3 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[3]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[3] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[3]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[3]["Temperature"]; ?>°C</div>
-                    </div>
+                <div class="card-body no-padding">
+                    <img class="img-responsive" src="../radar.png?nocache=<?php echo uniqid(); ?>" />
                 </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter3" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-3 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[4]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[4] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[4]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[4]["Temperature"]; ?>°C</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter4" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-sm-4 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[5]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[5] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[5]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[5]["Temperature"]; ?>°C</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter5" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-4 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[6]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[6] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[6]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[6]["Temperature"]; ?>°C</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter6" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-4 col-xs-12">
-        <div class="card state-<?php echo $Values_Now[7]["StatusCode"] ?>">
-            <div class="card-header">
-                <div class="card-title">
-                    <div class="title">
-                        <div class="col-sm-8"><?php echo $DisplayNameConfig[7] ?></div>
-                        <div class="col-sm-2 blue"><?php echo $Values_Now[7]["Humidity"]; ?>%</div>
-                        <div class="col-sm-2 red"><?php echo $Values_Now[7]["Temperature"]; ?>°C</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body no-padding">
-                <canvas id="wetter7" class="chart" width="478" height="260"
-                        style="width: 478px; height: 260px;"></canvas>
             </div>
         </div>
     </div>
@@ -270,7 +218,7 @@ foreach ($config as $value) {
 <?php
 
 //Für jedes Diagramm
-for ($i = 1; $i <= 7; $i++) {
+for ($i = 1; $i <= 4; $i++) {
     echo PHP_EOL . "<!-- Wetter $i --> ";
     echo '<script type="text/javascript">';
     echo "

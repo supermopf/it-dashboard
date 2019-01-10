@@ -9,7 +9,6 @@
     <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
     <!-- CSS Libs -->
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/animate.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-switch.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">

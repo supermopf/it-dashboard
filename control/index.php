@@ -15,7 +15,7 @@
     <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
     <!-- CSS Libs -->
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/animate.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-switch.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">
@@ -35,53 +35,53 @@
     </div>
     <div class="row">
         <div class="col-sm-3">
-            <button id="page1" class="btn btn-xl btn-block"><span class="icon fa fa-cloud"></span>Wetter</button>
+            <button id="page1" class="btn btn-xl btn-block"><i class="icon fas fa-cloud"></i>Wetter</button>
         </div>
         <div class="col-sm-3">
-            <button id="page2" class="btn btn-xl btn-block"><span class="icon fa fa-life-ring"></span>HelpLine</button>
+            <button id="page2" class="btn btn-xl btn-block"><i class="icon fas fa-life-ring"></i>HelpLine</button>
         </div>
         <div class="col-sm-3">
-            <button id="page3" class="btn btn-xl btn-block"><span class="icon fa fa-globe"></span>Netzwerk</button>
+            <button id="page3" class="btn btn-xl btn-block"><i class="icon fas fa-globe"></i>Netzwerk</button>
         </div>
         <div class="col-sm-3">
-            <button id="page4" class="btn btn-xl btn-block"><span class="icon fa fa-bar-chart"></span><span
+            <button id="page4" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i><span
                         class="title">Performance</span></button>
         </div>
     </div>
     <div class="row">
         <div class="col-sm-3">
-            <button id="page5" class="btn btn-xl btn-block"><span class="icon fa fa-bar-chart"></span><span
+            <button id="page5" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i><span
                         class="title">VMware</span></button>
         </div>
         <div class="col-sm-3">
-            <button id="page6" class="btn btn-xl btn-block"><span class="icon fa fa-bell"></span><span class="title">SCOM</span>
+            <button id="page6" class="btn btn-xl btn-block"><i class="icon fas fa-bell"></i><span class="title">SCOM</span>
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page7" class="btn btn-xl btn-block"><span class="icon fa fa-hdd-o"></span><span class="title">NetApp</span>
+            <button id="page7" class="btn btn-xl btn-block"><i class="icon fas fa-hdd"></i><span class="title">NetApp</span>
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page8" class="btn btn-xl btn-block"><span class="icon fa fa-save"></span><span class="title">Backup</span>
+            <button id="page8" class="btn btn-xl btn-block"><i class="icon fas fa-save"></i><span class="title">Backup</span>
             </button>
         </div>
     </div>
     <div class="row">
 
         <div class="col-sm-3">
-            <button id="page9" class="btn btn-xl btn-block"><span class="icon fa fa-code-fork"></span><span
+            <button id="page9" class="btn btn-xl btn-block"><i class="icon fas fa-code-branch"></i><span
                         class="title">M3</span></button>
         </div>
         <div class="col-sm-3">
-            <button id="page10" class="btn btn-xl btn-block"><span class="icon fa fa-wrench"></span><span class="title">Updates</span>
+            <button id="page10" class="btn btn-xl btn-block"><i class="icon fas fa-wrench"></i><span class="title">Updates</span>
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page11" class="btn btn-xl btn-block"><span class="icon fa fa-exclamation-triangle"></span><span
+            <button id="page11" class="btn btn-xl btn-block"><i class="icon fas fa-exclamation-triangle"></i><span
                         class="title">DERDACK</span></button>
         </div>
         <div class="col-sm-3">
-            <button id="page12" class="btn btn-xl btn-block"><span class="icon fa fa-puzzle-piece"></span><span
+            <button id="page12" class="btn btn-xl btn-block"><i class="icon fas fa-puzzle-piece"></i><span
                         class="title">Projektplan</span></button>
         </div>
     </div>

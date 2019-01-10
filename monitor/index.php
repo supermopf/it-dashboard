@@ -14,7 +14,7 @@
     <link rel="icon" href="./img/favicon.ico" type="image/x-ico; charset=binary"/>
     <!-- CSS Libs -->
     <link rel="stylesheet" type="text/css" href="lib/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="lib/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="lib/css/animate.min.css">
     <link rel="stylesheet" type="text/css" href="lib/css/bootstrap-switch.min.css">
     <link rel="stylesheet" type="text/css" href="lib/css/checkbox3.min.css">
@@ -77,54 +77,54 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                 <div class="side-menu-container">
                     <div class="navbar-header">
                         <a class="navbar-brand" href="#">
-                            <div class="icon fa fa-tachometer"></div>
+                            <i class="icon fas fa-tachometer-alt"></i>
                             <div class="title">IT Dashboard</div>
                         </a>
                     </div>
                     <ul id="navigation" class="nav navbar-nav">
                         <li class="active">
                             <a href="javascript:ButtonPage(1);">
-                                <span class="icon fa fa-cloud"></span><span class="title">Temperatur</span>
+                                <i class="icon fas fa-cloud"></i><span class="title">Temperatur</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(2);">
-                                <span class="icon fa fa-life-ring"></span><span class="title">helpLine</span>
+                                <i class="icon fas fa-life-ring"></i><span class="title">helpLine</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(3);">
-                                <span class="icon fa fa-globe"></span><span class="title">Netzwerk</span>
+                                <i class="icon fas fa-globe"></i><span class="title">Netzwerk</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(4);">
-                                <span class="icon fa fa-bar-chart"></span><span class="title">Performance</span>
+                                <i class="icon fas fa-chart-bar"></i><span class="title">Performance</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(5);">
-                                <span class="icon fa fa-bar-chart"></span><span class="title">VMware</span>
+                                <i class="icon fas fa-chart-bar"></i><span class="title">VMware</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(6);">
-                                <span class="icon fa fa-bell"></span><span class="title">SCOM</span>
+                                <i class="icon fas fa-bell"></i><span class="title">SCOM</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(7);">
-                                <span class="icon fa fa-hdd-o"></span><span class="title">NetApp</span>
+                                <i class="icon fas fa-hdd"></i><span class="title">NetApp</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(8);">
-                                <span class="icon fa fa-save"></span><span class="title">Backup</span>
+                                <i class="icon fas fa-save"></i><span class="title">Backup</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(9);">
-                                <span class="icon fa fa-code-fork"></span><span class="title">
+                                <i class="icon fas fa-code-branch"></i><span class="title">
                                     🚍400
 
                                 </span>
@@ -132,17 +132,17 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(10);">
-                                <span class="icon fa fa-wrench"></span><span class="title">Updates</span>
+                                <i class="icon fas fa-wrench"></i><span class="title">Updates</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(11);">
-                                <span class="icon fa fa-exclamation-triangle"></span><span class="title">DERDACK</span>
+                                <i class="icon fas fa-poo"></i><span class="title">DERDACK</span>
                             </a>
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(12);">
-                                <span class="icon fa fa-puzzle-piece"></span><span class="title">Projekte</span>
+                                <i class="icon fas fa-puzzle-piece"></i><span class="title">Projekte</span>
                             </a>
                         </li>
                     </ul>

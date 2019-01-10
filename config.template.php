@@ -22,7 +22,7 @@ define("LDAP_USERNAME", '');
 define("LDAP_PASSWORD", '');
 
 define("DASHBOARD_SQL_INSTANCE", '');
-define("DASHBOARD_SQL_INSTANCE", '');
+define("DASHBOARD_SQL_DATABASE", '');
 
 define("HELPLINE_SQL_INSTANCE", '');
 define("HELPLINE_SQL_DATABASE", '');
@@ -33,6 +33,7 @@ define("DERDACK_SQL_DATABASE", '');
 define("SCCM_SQL_INSTANCE", '');
 define("SCCM_SQL_DATABASE", '');
 
+define("APIKEY_openweathermap", '');
 
 //Connection Info
 $Default_Connection = array("Database" => DASHBOARD_SQL_INSTANCE, "CharacterSet" => "UTF-8");

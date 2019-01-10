@@ -453,7 +453,8 @@ a:hover {
 }
 
 .app-container .content-container .side-menu:hover .navbar-nav li.dropdown > a:after {
-    font-family: FontAwesome;
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
     content: "\f107";
     position: absolute;
     right: 1em;
@@ -500,7 +501,8 @@ a:hover {
 }
 
 .app-container.expanded .content-container .side-menu .navbar-nav li.dropdown > a:after {
-    font-family: FontAwesome;
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
     content: "\f107";
     position: absolute;
     right: 1em;
@@ -1410,7 +1412,8 @@ body.login-page .login-footer {
 }
 
 .breadcrumb > li + li:before {
-    font-family: FontAwesome;
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
     content: '\f105';
     margin-right: 3px;
 }
