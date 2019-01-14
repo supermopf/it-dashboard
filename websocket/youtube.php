@@ -73,7 +73,6 @@
                 <thead>
                 <tr>
                     <td style="width: 15%;">Thumbnail</td>
-                    <td style="width: 40%;">Titel</td>
                     <td style="width: 35%;">URL</td>
                     <td style="width: 10%;">Aktion</td>
                 </tr>
@@ -85,21 +84,15 @@
                     parse_str($line, $query);
                     reset($query);
                     $url = key($query);
-                    $result = get_youtube_details($query[$url], "title");
                     echo "<tr>";
                     echo "<td>";
                     echo "<a href='" . $line . "'><img class='img-responsive' src='https://i.ytimg.com/vi/" . $query[$url] . "/hqdefault.jpg' /></a>";
                     echo "</td>";
                     echo "<td>";
-                    echo $result;
-                    echo "</td>";
-                    echo "<td>";
                     echo "$line";
                     echo "</td>";
                     echo "<td>";
-                    if($result != "Video nicht abspielbar"){
                         echo "<div class=\"btn-group\"><button yturl='".$line."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
-                    }
                     echo "</td>";
                     echo "</tr>";
                 }
@@ -110,25 +103,6 @@
     </div>
 </div>
 </body>
-
-
-<?php
-
-function get_youtube_details($ref, $detail)
-{
-    if (!isset($GLOBALS['youtube_details'][$ref])) {
-        $json = @file_get_contents('https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=' . urlencode($ref) . '&format=json');
-        if($json === false)
-        {
-            return "Video nicht abspielbar";
-        }
-        $GLOBALS['youtube_details'][$ref] = json_decode($json, true); //parse the JSON into an array
-    }
-
-    return $GLOBALS['youtube_details'][$ref][$detail]; //return the requested video detail
-}
-
-?>
 <script src="../monitor/lib/js/jquery.min.js"></script>
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
 <script>

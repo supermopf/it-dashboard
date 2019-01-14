@@ -1,4 +1,5 @@
 <?php
+include(__DIR__ .'/../config.php');
 $host = 'it-dashboard.cbr.de'; //host
 $port = '9000'; //port
 $null = NULL; //null var
@@ -121,21 +122,12 @@ while (true) {
             if ($Page == 12) {
                 $Page = 1;
                 //Check for Snow
-                $conn = sqlsrv_connect('SQL-PRD-IT-Dash', array("Database" => "IT-Dashboard", "CharacterSet" => "UTF-8"));
-
-                if ($conn) {
-                    if ($result = sqlsrv_query($conn, "SELECT TOP 1 * FROM [IT-Dashboard].[dbo].[IT-Dashboard_Weather] WHERE [Location] = 'Celle' ORDER BY [Timestamp] DESC")) {
-                        $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                        if (strpos($row["Condition"], "chnee") !== false) {
-                            $Snow = True;
-                        } else {
-                            $Snow = False;
-                        }
-                    } else {
-
-                        echo "<pre>";
-                        die(print_r(sqlsrv_errors(), true));
-                    }
+                $json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+                $oIsernhagen = json_decode($json);
+                if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
+                    $Snow = True;
+                } else {
+                    $Snow = False;
                 }
             } else {
                 $Page++;
