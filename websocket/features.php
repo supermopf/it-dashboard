@@ -87,6 +87,7 @@ if ($conn) {
                         <li><a href="./youtube.php">YouTube</a></li>
                         <li><a href="./index.php">Adminpanel</a></li>
                         <li class="active"><a href="./features.php">Feature Request</a></li>
+                        <li><a href="./newtoast.php">Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
                         <li>
