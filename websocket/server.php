@@ -161,18 +161,6 @@ while (true) {
         send_message($update);
     }
 
-    if ($lastsongpull <= strtotime("-10 second")) {
-        $lastsongpull = strtotime("now");
-        try {
-            $result = getMp3StreamTitle($Radiostation, 19200);
-            if($result != "" && preg_match("/^.+?\s*-\s*.+$/", $result)){
-                $SongTitle = $result;
-            }
-        } catch (Exception $e) {
-
-        }
-    }
-
     if ($FUN_active == True AND $FUN == False) {
         $FUN_active = False;
         $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page $Page")));
@@ -210,7 +198,7 @@ while (true) {
                     } elseif ($split[2] == "False") {
                         $var = False;
                     } else {
-                        $var = $split[2];
+                        $var = urldecode($split[2]);
                     }
                     ${"$split[1]"} = $var;
                 } elseif (substr($user_message, 0, 4) == "!reg") {
@@ -424,35 +412,5 @@ function perform_handshaking($receved_header, $client_conn, $host, $port, &$Forw
             "WebSocket-Location: ws://$host:$port/websocket/server.php\r\n" .
             "Sec-WebSocket-Accept:$secAccept\r\n\r\n";
         socket_write($client_conn, $upgrade, strlen($upgrade));
-    }
-}
-function getMp3StreamTitle($streamingUrl, $interval, $offset = 0, $headers = true)
-{
-    $needle = 'StreamTitle=';
-    $ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36';
-    $opts = [
-        'http' => [
-            'method' => 'GET',
-            'header' => 'Icy-MetaData: 1',
-            'user_agent' => $ua
-        ]
-    ];
-    if (($headers = get_headers($streamingUrl))) {
-        foreach ($headers as $h) {
-            if (strpos(strtolower($h), 'icy-metaint') !== false && ($interval = explode(':', $h)[1])) {
-                break;
-            }
-        }
-    }
-    $context = stream_context_create($opts);
-    if ($stream = fopen($streamingUrl, 'r', false, $context)) {
-        $buffer = stream_get_contents($stream, $interval, $offset);
-        fclose($stream);
-        if (strpos($buffer, $needle) !== false) {
-            $title = explode($needle, $buffer)[1];
-            return substr($title, 1, strpos($title, ';') - 2);
-        }
-    } else {
-        throw new Exception("Unable to open stream [{$streamingUrl}]");
     }
 }
