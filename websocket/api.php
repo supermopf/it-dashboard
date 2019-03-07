@@ -5,7 +5,7 @@
  * Date: 18.07.2018
  * Time: 13:30
  */
-
+set_time_limit(30);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (

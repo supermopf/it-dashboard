@@ -33,7 +33,7 @@ if (FALSE !== $result) {
         header('Content-Type: image/jpeg');
         echo $entries[0]["thumbnailphoto"][0];
     } else {
-        $file = file_get_contents('https://img.buzzfeed.com/buzzfeed-static/static/2016-02/2/12/enhanced/webdr07/original-30631-1454434509-3.jpg');
+        $file = file_get_contents('https://it-dashboard.cbr.de/websocket/nopicture.png');
         header('Content-type: image/png');
         echo $file;
     }

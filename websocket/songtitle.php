@@ -161,7 +161,7 @@ while (!$StationFound) {
     $wsdata = fread($sock, 2000);
     $msg = hybi10Decode($wsdata);
     $msg = json_decode($msg);
-    if($msg->type == "update"){
+    if($msg->type == "update" && isset($msg->type)){
         $StationFound = true;
         fclose($sock);
     }

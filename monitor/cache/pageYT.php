@@ -21,6 +21,9 @@ parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
     function getArtistId() {
         return '<?php echo $yturl['v']; ?>';
     }
+    function getStartSeconds() {
+        return '<?php if(isset($yturl['t'])){echo $yturl['t'];}else{echo 0;}; ?>';
+    }
 
     function loadPlayer() {
         if (typeof(YT) == 'undefined' || typeof(YT.Player) == 'undefined') {
@@ -48,7 +51,7 @@ parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
             height: '450',
             width: '880',
             videoId: getArtistId(),
-            playerVars: {autoplay: 1, controls: 1, showinfo: 0, rel: 0, showsearch: 0, iv_load_policy: 3},
+            playerVars: {start: getStartSeconds(),autoplay: 1, controls: 1, showinfo: 0, rel: 0, showsearch: 0, iv_load_policy: 3},
             events: {
                 'onStateChange': onPlayerStateChange,
                 'onReady': onPlayerReady,
