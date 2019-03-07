@@ -50,7 +50,13 @@ if ($conn) {
                 </div>
             </div>
             <div class="panel-body">
-                <img src="<?php echo $thecodinglove[0]["URL"] ?>" class="col-xs-12 img-responsive">
+                <?php
+                if(strpos($thecodinglove[0]["URL"],"webm") !== false){
+                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.$thecodinglove[0]["URL"].'"></video>';
+                }else{
+                    echo '<img src="'.$thecodinglove[0]["URL"].'" class="col-xs-12 img-responsive">';
+                }
+                ?>
             </div>
         </div>
     </div>
@@ -62,7 +68,13 @@ if ($conn) {
                 </div>
             </div>
             <div class="panel-body">
-                <img src="<?php echo $thecodinglove[1]["URL"] ?>" class="col-xs-12 img-responsive">
+                <?php
+                if(strpos($thecodinglove[1]["URL"],"webm") !== false){
+                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.$thecodinglove[1]["URL"].'"></video>';
+                }else{
+                    echo '<img src="'.$thecodinglove[1]["URL"].'" class="col-xs-12 img-responsive">';
+                }
+                ?>
             </div>
         </div>
     </div>
