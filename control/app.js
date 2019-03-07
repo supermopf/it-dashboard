@@ -142,6 +142,10 @@ $(document).ready(function () {
     });
 
     $("#volume").slider({
+        scale: 'logarithmic',
+        step: 1,
+        min: 1,
+        max: 100,
         tooltip: "hide"
     });
     $('#volume').on("click touchstart slideStop", function (sliderValue) {
