@@ -53,6 +53,10 @@ $CycleTime = 30;
 $registered = array();
 $ProxyMatch = array();
 
+function get_http_response_code($url) {
+    $headers = get_headers($url);
+    return substr($headers[0], 9, 3);
+}
 
 function LogDebug($message, $LogLevel = 3)
 {
@@ -268,31 +272,39 @@ while (true) {
                         preg_match('/[^\/]+$/', $parts["path"], $matches);
                         $last_word = $matches[0];
 
-                        $Media = file_get_contents($obj->ToastSound);
-                        $hash = md5($Media);
-                        $file_info = new finfo(FILEINFO_MIME_TYPE);
-                        $filetype = mime2ext($file_info->buffer($Media));
+                        if(get_http_response_code($obj->ToastSound) != 200){
+                            unset($obj->ToastSound);
+                        }else{
+                            //URL is valid and available
+                            $Media = file_get_contents($obj->ToastSound);
+                            $hash = md5($Media);
+                            $file_info = new finfo(FILEINFO_MIME_TYPE);
+                            $filetype = mime2ext($file_info->buffer($Media));
 
-                        if (!file_exists('C:/inetpub/dashboard/websocket/cache/' . $last_word)) {
-                            file_put_contents('C:/inetpub/dashboard/websocket/cache/' . $hash . "." . $filetype, fopen($obj->ToastSound, 'r'));
+                            if (!file_exists('C:/inetpub/dashboard/websocket/cache/' . $last_word)) {
+                                file_put_contents('C:/inetpub/dashboard/websocket/cache/' . $hash . "." . $filetype, fopen($obj->ToastSound, 'r'));
+                            }
+                            $obj->ToastSound = 'https://it-dashboard.cbr.de/websocket/cache/' . $hash . "." . $filetype;
                         }
-                        $obj->ToastSound = 'https://it-dashboard.cbr.de/websocket/cache/' . $hash . "." . $filetype;
                     }
                     //CachePicture
                     if (isset($obj->ToastPicture ) && $obj->ToastPicture != "") {
                         $parts = parse_url($obj->ToastPicture);
                         preg_match('/[^\/]+$/', $parts["path"], $matches);
                         $last_word = $matches[0];
+                        if(get_http_response_code($obj->ToastSound) != 200){
+                            unset($obj->ToastPicture);
+                        }else{
+                            $Media = file_get_contents($obj->ToastPicture);
+                            $hash = md5($Media);
+                            $file_info = new finfo(FILEINFO_MIME_TYPE);
+                            $filetype = mime2ext($file_info->buffer($Media));
 
-                        $Media = file_get_contents($obj->ToastPicture);
-                        $hash = md5($Media);
-                        $file_info = new finfo(FILEINFO_MIME_TYPE);
-                        $filetype = mime2ext($file_info->buffer($Media));
-
-                        if (!file_exists('C:/inetpub/dashboard/websocket/imgcache/' . $last_word)) {
-                            file_put_contents('C:/inetpub/dashboard/websocket/imgcache/' . $hash . "." . $filetype, fopen($obj->ToastPicture, 'r'));
+                            if (!file_exists('C:/inetpub/dashboard/websocket/imgcache/' . $last_word)) {
+                                file_put_contents('C:/inetpub/dashboard/websocket/imgcache/' . $hash . "." . $filetype, fopen($obj->ToastPicture, 'r'));
+                            }
+                            $obj->ToastPicture = 'https://it-dashboard.cbr.de/websocket/imgcache/' . $hash . "." . $filetype;
                         }
-                        $obj->ToastPicture = 'https://it-dashboard.cbr.de/websocket/imgcache/' . $hash . "." . $filetype;
                     }
                     $json = json_encode($obj);
                     if (isset($obj->ToastHistory) && $obj->ToastHistory == "false") {

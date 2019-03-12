@@ -152,7 +152,14 @@ $head = "GET / HTTP/1.1" . "\r\n" .
     "Origin: $local" . "\r\n" .
     "Host: $host" . "\r\n" .
     "Sec-WebSocket-Key: asdasdaas76da7sd6asd6as7d" . "\r\n";
-$sock = fsockopen($host, $port, $errno, $errstr, 2);
+try{
+    $sock = fsockopen($host, $port, $errno, $errstr, 2);
+}catch(Exception $e){
+    echo $e->getMessage(), "\n";
+    die();
+}
+
+
 fwrite($sock, $head) or die('error:' . $errno . ':' . $errstr);
 $headers = fread($sock, 2000);
 
@@ -161,7 +168,7 @@ while (!$StationFound) {
     $wsdata = fread($sock, 2000);
     $msg = hybi10Decode($wsdata);
     $msg = json_decode($msg);
-    if($msg->type == "update" && isset($msg->type)){
+    if($msg->type == "update" && isset($msg->type)&& isset($msg)){
         $StationFound = true;
         fclose($sock);
     }
