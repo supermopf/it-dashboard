@@ -292,7 +292,7 @@ while (true) {
                         $parts = parse_url($obj->ToastPicture);
                         preg_match('/[^\/]+$/', $parts["path"], $matches);
                         $last_word = $matches[0];
-                        if(get_http_response_code($obj->ToastSound) != 200){
+                        if(get_http_response_code($obj->ToastPicture) != 200){
                             unset($obj->ToastPicture);
                         }else{
                             $Media = file_get_contents($obj->ToastPicture);
