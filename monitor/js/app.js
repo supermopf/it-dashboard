@@ -16,6 +16,7 @@ var CurrentPage = 0;
 var rnd = 1;
 var YTRunning = false;
 var SongTitle = "";
+var ClosingTimeout;
 
 
 
@@ -262,9 +263,15 @@ $(document).ready(function () {
 
                         if (message.ToastPicture !== undefined && message.ToastPicture !== "") {
                             if ((message.ToastPicture).includes('mp4') || (message.ToastPicture).includes('webm')) {
-                                $("#modalimage").html('<div align="center" class="embed-responsive embed-responsive-16by9"><video autoplay loop class="embed-responsive-item" src="' + message.ToastPicture + '?nocache=' + Math.floor(Math.random() * 100) + '"></video></div>');
+                                if(message.ToastVideoNoRepeat !== undefined && message.ToastVideoNoRepeat == "true"){
+                                    $("#modalimage").html('<div align="center" class="embed-responsive embed-responsive-16by9"><video onplay="clearTimeout(ClosingTimeout)" onended="VideoOnEnded(ClosingTimeout)" autoplay class="embed-responsive-item" src="' + message.ToastPicture + '?nocache=' + Math.floor(Math.random() * 100) + '"></video></div>');
+                                }else{
+                                    $("#modalimage").html('<div align="center" class="embed-responsive embed-responsive-16by9"><video loop autoplay class="embed-responsive-item" src="' + message.ToastPicture + '?nocache=' + Math.floor(Math.random() * 100) + '"></video></div>');
+                                }
+
+
                             } else {
-                                $("#modalimage").html('<img src="' + message.ToastPicture + '?nocache=' + Math.floor(Math.random() * 100) + '" class="img-responsive" style="min-width:75%" alt="">');
+                                $("#modalimage").html('<img src="' + message.ToastPicture + '?nocache=' + Math.floor(Math.random() * 100) + '" class="img-responsive" style="max-height: calc(100vh - 200px)" alt="">');
                             }
                         } else {
                             $("#modalimage").html("");
@@ -286,12 +293,12 @@ $(document).ready(function () {
                         $('#myModal').modal('show');
 
                         if (message.ToastTime !== undefined && message.ToastTime !== "") {
-                            setTimeout(function () {
+                            ClosingTimeout = setTimeout(function () {
                                 $('#myModal').modal('hide');
                                 $("#modalimage").html('');
                             }, message.ToastTime);
                         } else {
-                            setTimeout(function () {
+                            ClosingTimeout = setTimeout(function () {
                                 $('#myModal').modal('hide');
                                 $("#modalimage").html('');
                             }, 30000);
@@ -479,4 +486,8 @@ function show_toast(){
     var x = document.getElementById("toast");
     x.className = "show";
     setTimeout(function(){ x.className = x.className.replace("show", "");}, 12000);
+}
+
+function VideoOnEnded() {
+    $('#myModal').modal('hide');
 }

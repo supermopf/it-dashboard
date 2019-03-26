@@ -19,11 +19,21 @@
         .row {
             margin-top: 25px;
         }
+        .fixed-top {
+            position: fixed;
+            top: 25px;
+            right: 0;
+            left: 0;
+            z-index: 1030;
+            background-color: #f8f8f8;
+            padding: 15px 0;
+            border-bottom: 1px solid #e7e7e7;
+        }
     </style>
 </head>
 <body>
 <div class="container-fluid">
-    <div class="row" style="margin-top: 0">
+    <div class="row" style="margin-top: 10%">
         <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container-fluid">
                 <div class="navbar-header">
@@ -55,7 +65,7 @@
             </div><!--/.container-fluid -->
         </nav>
     </div>
-    <div class="row" style="margin-top: 5%;">
+    <div class="row fixed-top">
         <div class="col-lg-offset-1 col-lg-8">
             <div class="input-group">
                 <input placeholder="Youtube-URL..." type="text" id="yt-message" class="form-control">
@@ -68,7 +78,7 @@
             <input id="volume" data-slider-id='volumeSlider' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="14"/>
         </div>
     </div>
-    <div class="row">
+    <div class="row space-top">
         <div class="col-lg-offset-1 col-lg-10">
             <table class="table table-bordered">
                 <thead>

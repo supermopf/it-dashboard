@@ -34,6 +34,11 @@ if ($conn) {
     echo "<pre>";
     die(print_r(sqlsrv_errors(), true));
 }
+if(!isset($server[1])){
+    echo "<pre>";
+    echo "Power 🥚 ist nicht erreichbar";
+    die();
+}
 ?>
 
 

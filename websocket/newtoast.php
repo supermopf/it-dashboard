@@ -75,7 +75,8 @@
                     "ToastSound",
                     "ToastTime",
                     "ToastVolume",
-                    "ToastHistory"
+                    "ToastHistory",
+                    "ToastVideoNoRepeat"
                 );
 
                 foreach($properties as $item){

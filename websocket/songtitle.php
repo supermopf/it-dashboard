@@ -145,6 +145,7 @@ $host = '127.0.0.1';
 $port = 9000;
 $local = "http://it-dashboard.cbr.de/monitor/";
 $StationFound = false;
+$SongTitle = "";
 
 $head = "GET / HTTP/1.1" . "\r\n" .
     "Upgrade: WebSocket" . "\r\n" .
@@ -168,7 +169,7 @@ while (!$StationFound) {
     $wsdata = fread($sock, 2000);
     $msg = hybi10Decode($wsdata);
     $msg = json_decode($msg);
-    if($msg->type == "update" && isset($msg->type)&& isset($msg)){
+    if(isset($msg)&& isset($msg->type) && $msg->type == "update"){
         $StationFound = true;
         fclose($sock);
     }

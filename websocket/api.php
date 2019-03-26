@@ -252,6 +252,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <td>true</td>
                 <td>Gibt an, ob der Toast in der History gespeichert werden soll</td>
             </tr>
+            <tr>
+                <td>ToastVideoNoRepeat</td>
+                <td>POST</td>
+                <td>Nein</td>
+                <td>Boolean</td>
+                <td>false</td>
+                <td>Gibt an, ob der Toast nach dem Ende des Videos gestoppt werden soll.</td>
+            </tr>
         </tbody>
     </table>
 </body>

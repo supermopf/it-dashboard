@@ -35,6 +35,8 @@ define("SCCM_SQL_DATABASE", '');
 
 define("APIKEY_openweathermap", '');
 
+define("DEFAULT_RADIOSTATION", '');
+
 //Connection Info
 $Default_Connection = array("Database" => DASHBOARD_SQL_INSTANCE, "CharacterSet" => "UTF-8");
 

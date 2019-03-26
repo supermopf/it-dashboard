@@ -38,7 +38,7 @@
             <button id="page1" class="btn btn-xl btn-block"><i class="icon fas fa-cloud"></i>Wetter</button>
         </div>
         <div class="col-sm-3">
-            <button id="page2" class="btn btn-xl btn-block"><i class="icon fas fa-life-ring"></i>HelpLine</button>
+            <button id="page2" class="btn btn-xl btn-block"><i class="icon fas fa-life-ring"></i>helpLine</button>
         </div>
         <div class="col-sm-3">
             <button id="page3" class="btn btn-xl btn-block"><i class="icon fas fa-globe"></i>Netzwerk</button>
