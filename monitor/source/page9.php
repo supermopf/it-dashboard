@@ -36,7 +36,7 @@ if ($conn) {
 }
 if(!isset($server[1])){
     echo "<pre>";
-    echo "Power ðŸ¥š ist nicht erreichbar";
+    echo "Power 🥚 ist nicht erreichbar";
     die();
 }
 ?>
