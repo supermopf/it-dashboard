@@ -11,7 +11,7 @@ $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
     //Haben wir Kontakt?
-    if ($result = sqlsrv_query($conn, "SELECT t.[Servername],t.[HDDUsage],t.[SGCount],t.[TimeStamp] FROM [IT-Dashboard].[dbo].[IT-Dashboard_M3_Main] t INNER JOIN (SELECT [Servername],max([TimeStamp]) AS Zeit FROM [IT-Dashboard].[dbo].[IT-Dashboard_M3_Main] GROUP BY [Servername]) tm on t.Servername = tm.Servername AND t.[TimeStamp] = tm.Zeit ORDER BY [Servername] DESC")) {
+    if ($result = sqlsrv_query($conn, "SELECT t.[Servername],t.[HDDUsage],t.[SGCount],t.[TimeStamp] FROM [IT-Dashboard].[dbo].[IT-Dashboard_M3_Main] t INNER JOIN (SELECT [Servername],max([TimeStamp]) AS Zeit FROM [IT-Dashboard].[dbo].[IT-Dashboard_M3_Main] GROUP BY [Servername]) tm on t.Servername = tm.Servername AND t.[TimeStamp] = tm.Zeit WHERE t.Servername <> '' ORDER BY [Servername]")) {
         $server = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
             array_push($server, $row);
@@ -36,7 +36,7 @@ if ($conn) {
 }
 if(!isset($server[1])){
     echo "<pre>";
-    echo "Power 🥚 ist nicht erreichbar";
+    echo "Power ðŸ¥š ist nicht erreichbar";
     die();
 }
 ?>

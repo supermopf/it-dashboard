@@ -3,7 +3,7 @@
 
 <head>
     <title>IT Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=1920">
     <meta http-equiv="Pragma" content="no-cache">
     <meta charset="utf-8"/>
     <!-- Fonts -->
