@@ -94,36 +94,31 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(3);">
-                                <i class="icon fas fa-globe"></i><span class="title">Netzwerk</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(4);">
                                 <i class="icon fas fa-chart-bar"></i><span class="title">Performance</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(5);">
+                            <a href="javascript:ButtonPage(4);">
                                 <i class="icon fas fa-chart-bar"></i><span class="title">VMware</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(6);">
+                            <a href="javascript:ButtonPage(5);">
                                 <i class="icon fas fa-bell"></i><span class="title">SCOM</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(7);">
+                            <a href="javascript:ButtonPage(6);">
                                 <i class="icon fas fa-hdd"></i><span class="title">NetApp</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(8);">
+                            <a href="javascript:ButtonPage(7);">
                                 <i class="icon fas fa-save"></i><span class="title">Backup</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(9);">
+                            <a href="javascript:ButtonPage(8);">
                                 <i class="icon fas fa-code-branch"></i><span class="title">
                                     🚍400
 
@@ -131,18 +126,13 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(10);">
+                            <a href="javascript:ButtonPage(9);">
                                 <i class="icon fas fa-wrench"></i><span class="title">Updates</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(11);">
+                            <a href="javascript:ButtonPage(10);">
                                 <i class="icon fas fa-poo"></i><span class="title">DERDACK</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(12);">
-                                <i class="icon fas fa-puzzle-piece"></i><span class="title">Projekte</span>
                             </a>
                         </li>
                     </ul>

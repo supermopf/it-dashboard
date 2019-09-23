@@ -1,59 +1,55 @@
+<!-- ESX Nodes START -->
+<!-- VMware -->
 <?php
-/**
- * Created by PhpStorm.
- * User: victor.lange
- * Date: 05.04.2016
- * Time: 16:12
- */
-//
-// Normal Performance
-//
 require("../../config.php");
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 $query = "";
 $query .= "SELECT ";
-$query .= "	Highest.[Name], ";
-$query .= "	[CPU], ";
-$query .= "	[RAM], ";
-$query .= "	[Timestamp] ";
+$query .= "	Highest.[Hostname], ";
+$query .= "  [CPU], ";
+$query .= "  [RAM], ";
+$query .= "  [Description], ";
+$query .= "  [Guests], ";
+$query .= "  [Timestamp] ";
 $query .= "FROM ";
 $query .= "( ";
-$query .= "	SELECT TOP 12 [Name],ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS Rank ";
-$query .= "	FROM [IT-Dashboard].[dbo].[IT-Dashboard_Performance] ";
+$query .= "	SELECT TOP 12 [Hostname],ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS Rank ";
+$query .= "	FROM [IT-Dashboard].[dbo].[IT-Dashboard_VMWARE] ";
 $query .= "	WHERE[Timestamp] > DATEADD(MINUTE, -30, GETDATE()) ";
-$query .= "	GROUP BY [Name] ";
+$query .= "	GROUP BY [Hostname] ";
 $query .= "	ORDER BY AVG([CPU]) DESC ";
 $query .= ") Highest ";
-$query .= "JOIN [IT-Dashboard].[dbo].[IT-Dashboard_Performance] AS Perf ON Perf.[Name] = Highest.[Name] ";
+$query .= "JOIN [IT-Dashboard].[dbo].[IT-Dashboard_VMWARE] AS Perf ON Perf.[Hostname] = Highest.[Hostname] ";
 $query .= "WHERE[Timestamp] > DATEADD(MINUTE, -30, GETDATE()) ";
 $query .= "ORDER BY Highest.Rank,[Timestamp]";
+
+
 if ($result = sqlsrv_query($conn, $query)) {
     $LastHostname = "";
     $temp_array = array();
-    $server = array();
+    $vmware = array();
     while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-        if ($LastHostname != $row["Name"]) {
-            $server[] = $temp_array;
+        if ($LastHostname != $row["Hostname"]) {
+            $vmware[] = $temp_array;
             $temp_array = array();
             $temp_array[] = $row;
-            $LastHostname = $row["Name"];
+            $LastHostname = $row["Hostname"];
         } else {
             $temp_array[] = $row;
         }
     }
-    $server[] = $temp_array;
+    $vmware[] = $temp_array;
 } else {
-
     echo "<pre>";
     die(print_r(sqlsrv_errors(), true));
 }
 
 
 //        echo "<pre>";
-//        print_R($server);
+//        print_R($vmware);
 
-$count = count($server) - 1;
+$count = count($vmware) - 1;
 
 
 function CheckState($array)
@@ -72,19 +68,19 @@ echo '<div class="col-lg-12">';
 
 for ($i = 1; $i <= $count; $i++) {
     echo '<div class="col-sm-3 col-xs-12">';
-    echo '<div class="card ' . CheckState($server[$i]) . '">';
+    echo '<div class="card ' . CheckState($vmware[$i]) . '">';
     echo '<div class="card-header">';
     echo '<div class="card-title">';
     echo '<div class="title">';
-    echo '<div class="col-sm-8" id="' . $server[$i][0]["Name"] . '">' . $server[$i][0]["Name"] . '</div>';
+    echo '<div class="col-sm-8" id="' . $vmware[$i][0]["Hostname"] . '">' . $vmware[$i][0]["Hostname"] . '</div>';
     echo '<div class="col-sm-2" style="' . PRIMARY_STYLE . '">';
-    if (array_key_exists(1, $server[$i])) {
-        echo end($server[$i])["CPU"] . "%";
+    if (array_key_exists(1, $vmware[$i])) {
+        echo end($vmware[$i])["CPU"] . "%";
     }
     echo '</div>';
     echo '<div class="col-sm-2" style="' . SECONDARY_STYLE . '">';
-    if (array_key_exists(1, $server[$i])) {
-        echo end($server[$i])["RAM"] . "%";
+    if (array_key_exists(1, $vmware[$i])) {
+        echo end($vmware[$i])["RAM"] . "%";
     }
     echo '</div>';
     echo '</div>';
@@ -141,9 +137,9 @@ for ($i = 1; $i <= $count; $i++) {
                             var data = {
                             labels: [';
     $labels = "";
-    foreach ($server[$i] as $key => $value) {
-        if ($server[$i][$key]["Name"] === $server[$i][0]["Name"]) {
-            $dateObj = $server[$i][$key]["Timestamp"];
+    foreach ($vmware[$i] as $key => $value) {
+        if ($vmware[$i][$key]["Hostname"] === $vmware[$i][0]["Hostname"]) {
+            $dateObj = $vmware[$i][$key]["Timestamp"];
             //Haben wir es geschafft Rick?
             if ($dateObj instanceof \DateTime) {
                 $labels .= "'" . $dateObj->format('H:i') . "',";
@@ -161,9 +157,9 @@ for ($i = 1; $i <= $count; $i++) {
                                 borderWidth: 1,
                                 data: [';
     $data = "";
-    foreach ($server[$i] as $key => $value) {
-        if ($server[$i][$key]['Name'] === $server[$i][0]['Name']) {
-            $data .= $server[$i][$key]['CPU'] . ',';
+    foreach ($vmware[$i] as $key => $value) {
+        if ($vmware[$i][$key]['Hostname'] === $vmware[$i][0]['Hostname']) {
+            $data .= $vmware[$i][$key]['CPU'] . ',';
         }
     }
     echo substr($data, 0, -1);
@@ -176,10 +172,10 @@ for ($i = 1; $i <= $count; $i++) {
                                 pointRadius: 1,
                                 data: [';
     $data = '';
-    foreach ($server[$i] as $key => $value) {
+    foreach ($vmware[$i] as $key => $value) {
 
-        if ($server[$i][$key]['Name'] === $server[$i][0]['Name']) {
-            $data .= $server[$i][$key]['RAM'] . ',';
+        if ($vmware[$i][$key]['Hostname'] === $vmware[$i][0]['Hostname']) {
+            $data .= $vmware[$i][$key]['RAM'] . ',';
         }
     }
     echo substr($data, 0, -1);
@@ -192,3 +188,4 @@ for ($i = 1; $i <= $count; $i++) {
 ?>
 </div>
 </div>
+<!-- ESX Nodes END -->

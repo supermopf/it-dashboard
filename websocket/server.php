@@ -123,7 +123,7 @@ while (true) {
             send_message($commmand);
             $FUN_active = True;
         } else {
-            if ($Page == 12) {
+            if ($Page == 11) {
                 $Page = 1;
                 //Check for Snow
                 $json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');

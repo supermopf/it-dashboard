@@ -19,9 +19,7 @@ $pages = array(
     "page7.php",
     "page8.php",
     "page9.php",
-    "page10.php",
-    "page11.php",
-    "page12.php"
+    "page10.php"
 );
 
 
