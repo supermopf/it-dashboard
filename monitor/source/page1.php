@@ -208,10 +208,10 @@ for ($i = 1; $i <= 4; $i++) {
                     {
                         label: \"Temperatur in °C\",
                         backgroundColor: [
-                            'rgba(242, 38, 19, 0.2)'
+                            'rgba(199, 13, 58, 0.2)'
                         ],
                         borderColor: [
-                            'rgba(242, 38, 19,1)'
+                            'rgba(199, 13, 58,1)'
                         ],
                         borderWidth: 1,
                         data: [";
@@ -227,10 +227,10 @@ for ($i = 1; $i <= 4; $i++) {
                     },{
                         label: \"Luftfeuchtigkeit in %\",
                          backgroundColor: [
-                            'rgba(34, 167, 240,0.2)'
+                            'rgba(69, 150, 155,0.2)'
                         ],
                         borderColor: [
-                            'rgba(34, 167, 240,1)'
+                            'rgba(69, 150, 155,1)'
                         ],
                         borderWidth: 1,
                         data: [";

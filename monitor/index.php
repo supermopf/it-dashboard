@@ -20,7 +20,8 @@
     <link rel="stylesheet" type="text/css" href="lib/css/checkbox3.min.css">
     <!-- CSS App -->
     <link rel="stylesheet" type="text/css" href="css/style.css?random=<?php echo uniqid(); ?>">
-    <link rel="stylesheet" type="text/css" href="css/themes/flat-blue.css?random=<?php echo uniqid(); ?>">
+<!--    <link rel="stylesheet" type="text/css" href="css/themes/flat-blue.css?random=--><?php //echo uniqid(); ?><!--">-->
+    <link rel="stylesheet" type="text/css" href="css/themes/darkmode.css?random=<?php echo uniqid(); ?>">
 </head>
 
 <?php
@@ -109,29 +110,24 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(6);">
-                                <i class="icon fas fa-hdd"></i><span class="title">NetApp</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(7);">
                                 <i class="icon fas fa-save"></i><span class="title">Backup</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(8);">
+                            <a href="javascript:ButtonPage(7);">
                                 <i class="icon fas fa-code-branch"></i><span class="title">
-                                    🚍400
+                                    🚍4🥚
 
                                 </span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(9);">
+                            <a href="javascript:ButtonPage(8);">
                                 <i class="icon fas fa-wrench"></i><span class="title">Updates</span>
                             </a>
                         </li>
                         <li>
-                            <a href="javascript:ButtonPage(10);">
+                            <a href="javascript:ButtonPage(9);">
                                 <i class="icon fas fa-poo"></i><span class="title">DERDACK</span>
                             </a>
                         </li>

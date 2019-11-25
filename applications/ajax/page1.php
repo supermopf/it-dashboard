@@ -2,13 +2,12 @@
 /**********CONFIG***********/
 //Server, welche angezeigt werden sollen
 $config = array(
-    1 => "cbr-pdm-app01",
-    2 => "cbr-pdm-svc701",
-    3 => "cbr-plmon701",
-    4 => "cbr-plmon702",
-    5 => "cbr-srmon701",
-    6 => "cbr-srmon702",
-    7 => "cbr-pdm-svc702"
+    1 => "cbr-plmon701",
+    2 => "cbr-plmon702",
+    3 => "cbr-srmon701",
+    4 => "cbr-srmon702",
+    5 => "cbr-pdm-svc701",
+    6 => "cbr-pdm-svc702"
 );
 
 //Zeigt Fehler an

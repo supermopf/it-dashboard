@@ -164,7 +164,7 @@ if ($conn) {
         <div class="card summary-inline">
             <div class="card-body">
                 <!-- Table -->
-                <table class="table table-responsive table-striped">
+                <table class="table table-responsive">
                     <thead>
                     <tr>
                         <th style="width: 10%;" class="h4">Ticketnummer</th>
