@@ -15,7 +15,7 @@
     <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
     <!-- CSS Libs -->
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"/>
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/animate.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-switch.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">
@@ -41,48 +41,47 @@
             <button id="page2" class="btn btn-xl btn-block"><i class="icon fas fa-life-ring"></i>helpLine</button>
         </div>
         <div class="col-sm-3">
-            <button id="page3" class="btn btn-xl btn-block"><i class="icon fas fa-globe"></i>Netzwerk</button>
+            <button id="page3" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i>Performance</button>
         </div>
         <div class="col-sm-3">
-            <button id="page4" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i><span
-                        class="title">Performance</span></button>
+            <button id="page4" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i><span class="title">VMware</span></button>
         </div>
     </div>
     <div class="row">
         <div class="col-sm-3">
             <button id="page5" class="btn btn-xl btn-block"><i class="icon fas fa-chart-bar"></i><span
-                        class="title">VMware</span></button>
+                        class="title">SCOM</span></button>
         </div>
         <div class="col-sm-3">
-            <button id="page6" class="btn btn-xl btn-block"><i class="icon fas fa-bell"></i><span class="title">SCOM</span>
+            <button id="page6" class="btn btn-xl btn-block"><i class="icon fas fa-save"></i><span class="title">Backup</span>
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page7" class="btn btn-xl btn-block"><i class="icon fas fa-hdd"></i><span class="title">NetApp</span>
+            <button id="page7" class="btn btn-xl btn-block"><i class="icon fas fa-bus"></i><span class="title">Bus4i</span>
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page8" class="btn btn-xl btn-block"><i class="icon fas fa-save"></i><span class="title">Backup</span>
+            <button id="page8" class="btn btn-xl btn-block"><i class="icon fas fa-code-branch"></i><span class="title">Updates</span>
             </button>
         </div>
     </div>
     <div class="row">
 
         <div class="col-sm-3">
-            <button id="page9" class="btn btn-xl btn-block"><i class="icon fas fa-code-branch"></i><span
-                        class="title">M3</span></button>
+            <button id="page9" class="btn btn-xl btn-block"><i class="icon fas fa-exclamation-triangle"></i><span
+                        class="title">Derdack</span></button>
         </div>
         <div class="col-sm-3">
-            <button id="page10" class="btn btn-xl btn-block"><i class="icon fas fa-wrench"></i><span class="title">Updates</span>
+            <button id="page10" class="btn btn-xl btn-block"><i class="icon fas fa-user-slash"></i><span class="title">Julian-O-Meter</span>
             </button>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-3" hidden>
             <button id="page11" class="btn btn-xl btn-block"><i class="icon fas fa-exclamation-triangle"></i><span
-                        class="title">DERDACK</span></button>
+                        class="title">XXX</span></button>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-3" hidden>
             <button id="page12" class="btn btn-xl btn-block"><i class="icon fas fa-puzzle-piece"></i><span
-                        class="title">Projektplan</span></button>
+                        class="title">XXX</span></button>
         </div>
     </div>
     <div class="row">
@@ -112,8 +111,12 @@
             <label class="col-sm-6 control-label vcenter" for="radio_checkbox">Radio</label>
             <input class="col-sm-6 checkbox" id="radio_checkbox" type="checkbox" data-toggle="toggle">
         </div>
-        <div class="col-sm-4">
-
+        <div class="col-sm-2">
+            <label class="col-sm-5 control-label vcenter" for="wheel_checkbox">Glücksrad</label>
+            <input class="col-sm-7 checkbox" id="wheel_checkbox" type="checkbox" data-toggle="toggle">
+        </div>
+		<div class="col-sm-1">
+            <button class="btn btn-block" id="spinbtn" style="margin:0px;">Spin</button>
         </div>
     </div>
     <div id="busdiv">
@@ -130,5 +133,5 @@
 <script src="../monitor/js/bootstrap-progressbar.min.js"></script>
 <script src="../monitor/lib/js/bootstrap-switch.min.js"></script>
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
-<script src="../config.js.php"></script>
+<script type="text/javascript" src="../config.js.php"></script>
 <script src="./app.js?random=<?php echo uniqid(); ?>"></script>

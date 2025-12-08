@@ -18,7 +18,7 @@ $Wellen_Conf = array(
     ),
     array(
         //Pfusch am Stizzel
-        "ID" => "00100017' OR coll.CollectionID = '00100092' OR coll.CollectionID = '0010006F",
+        "ID" => "00100180",
         "Name" => "Server Welle 2",
         "Prop" => "SWelle2"
     ),
@@ -56,7 +56,7 @@ if ($conn) {
             comp.Operating_System_Name_and0 LIKE '%Server%' AND
             /*
             00100016	Server Welle 1
-            00100017	Server Welle 2
+            00100180	Server Welle 2 (for Deployment only)
             00100142	Server Welle 3
             */
             (coll.CollectionID = '" . $ConfItem["ID"] . "' )AND

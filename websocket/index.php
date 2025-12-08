@@ -47,6 +47,7 @@
                         <li><a href="./youtube.php">YouTube</a></li>
                         <li class="active"><a href="./index.php">Adminpanel</a></li>
                         <li><a href="./features.php">Feature Request</a></li>
+						<li><a href="./julianometer.php">Julian-O-Meter</a></li>
                         <li><a href="./newtoast.php">Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
@@ -106,6 +107,7 @@
                     Cat: <span id="Cat"></span><br/>
                     Snow: <span id="Snow"></span><br/>
                     BusActive: <span id="BusActive"></span><br/>
+                    Wheel: <span id="Wheel"></span><br/>
                     Cycle: <span id="Cycle"></span><br/>
                     CD: <span id="CD"></span><br/>
                     Radio: <span id="Radio"></span><br/>
@@ -157,7 +159,7 @@
 
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-<script src="../config.js.php"></script>
+<script type="text/javascript" src="../config.js.php"></script>
 
 <script language="javascript" type="text/javascript">
     function clean(obj) {
@@ -278,6 +280,7 @@
                 $("#Cat").html(msg.Cat);
                 $("#Snow").html(msg.Snow);
                 $("#BusActive").html(msg.BusActive);
+                $("#Wheel").html(msg.Wheel);
                 $("#Cycle").html(msg.Cycle);
                 $("#CD").html(msg.CD);
                 $("#Radio").html(msg.Radio);

@@ -1915,6 +1915,13 @@ td {
     width: 50px;
 }
 
+#michaelimg {
+    float: right;
+    margin-top: 15px;
+    height: 50px;
+    width: 50px;
+}
+
 #buscontainer {
     width: 140%;
     position: fixed;

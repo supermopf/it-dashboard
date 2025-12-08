@@ -1,6 +1,38 @@
 <?php
 $url = $_REQUEST["src"];
-parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
+$videoID = null; // Variable initialisieren
+
+// 1. Prüfe auf das YouTube Shorts-Format: https://www.youtube.com/shorts/VIDEO_ID
+// Der reguläre Ausdruck extrahiert die 11-stellige ID direkt aus dem Pfad.
+if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i', $url, $matches)) {
+    $videoID = $matches[1];
+}
+// 2. Fallback auf das Standard-Format (watch?v=VIDEO_ID) und youtu.be/VIDEO_ID
+else {
+    // Versucht die ID über den Query-Parameter 'v' zu bekommen (Standard-URL)
+    parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
+    
+    if (isset($yturl['v'])) {
+        $videoID = $yturl['v'];
+    } 
+    // Zusätzlicher Check für die Kurzform-URL youtu.be/VIDEO_ID
+    else {
+        $path = parse_url($url, PHP_URL_PATH);
+        // Entfernt den führenden Schrägstrich, um die ID zu erhalten
+        $potential_id = trim($path, '/');
+
+        // Prüfen, ob es eine gültig aussehende 11-stellige YouTube ID ist
+        if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $potential_id)) {
+             $videoID = $potential_id;
+        }
+    }
+}
+
+if ($videoID) {
+    //echo "Gefundene Video-ID: " . $videoID;
+} else {
+    echo "Keine gültige YouTube-Video-ID gefunden.";
+}
 
 ?>
 <div class="row">
@@ -19,7 +51,7 @@ parse_str(parse_url($url, PHP_URL_QUERY), $yturl);
     });
 
     function getArtistId() {
-        return '<?php echo $yturl['v']; ?>';
+        return '<?php echo $videoID; ?>';
     }
     function getStartSeconds() {
         return '<?php if(isset($yturl['t'])){echo $yturl['t'];}else{echo 0;}; ?>';

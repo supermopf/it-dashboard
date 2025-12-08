@@ -34,6 +34,15 @@ $(document).ready(function () {
         };
         websocket.send(JSON.stringify(msg));
     };
+	
+    $('#spinbtn').bind("click touchstart", function () { //use clicks message send button
+        //prepare json data
+        var msg = {
+            message: '!spin'
+        };
+        //convert and send data to server
+        websocket.send(JSON.stringify(msg));
+    });
 
 
     $('#page1').bind("click touchstart", function () { //use clicks message send button
@@ -160,6 +169,21 @@ $(document).ready(function () {
     $('#volume').on("slideStart", function (sliderValue) {
         sliding = true;
     });
+	
+	$('#wheel_checkbox').on('switchChange.bootstrapSwitch', function () {
+        if ($('#wheel_checkbox').bootstrapSwitch('state')) {
+            var msg = {
+                message: '!var Wheel True'
+            };
+        } else {
+            var msg = {
+                message: '!var Wheel False'
+            };
+        }
+        //convert and send data to server
+        console.log(msg);
+        websocket.send(JSON.stringify(msg));
+    });
 
 
     $('#cycle_checkbox').on('switchChange.bootstrapSwitch', function () {
@@ -226,6 +250,26 @@ $(document).ready(function () {
         websocket.send(JSON.stringify(msg));
     });
 
+    $('#stop').on("contextmenu", function(evt) {
+        evt.preventDefault();
+        var msg = {
+            message: '!bus end'
+        };
+        websocket.send(JSON.stringify(msg));
+    });
+
+    $('.progress').on("contextmenu", function(evt) {
+        evt.preventDefault();
+        var msg = {
+            message: '!fpage 1'
+        };
+        websocket.send(JSON.stringify(msg));
+        var msg = {
+            message: '!var Cat True'
+        };
+        websocket.send(JSON.stringify(msg));
+    });
+
 
     //#### Message received from server?
     websocket.onmessage = function (ev) {
@@ -281,6 +325,9 @@ $(document).ready(function () {
             }
             if (JSON.parse($("#cycle_checkbox").bootstrapSwitch('state')) !== JSON.parse(msg.Cycle)) {
                 $("#cycle_checkbox").bootstrapSwitch('state', JSON.parse(msg.Cycle), true);
+            }
+            if (JSON.parse($("#wheel_checkbox").bootstrapSwitch('state')) !== JSON.parse(msg.Wheel)) {
+                $("#wheel_checkbox").bootstrapSwitch('state', JSON.parse(msg.Cycle), true);
             }
             if (JSON.parse($("#radio_checkbox").bootstrapSwitch('state')) !== JSON.parse(msg.Radio)) {
                 $("#radio_checkbox").bootstrapSwitch('state', JSON.parse(msg.Radio), true);

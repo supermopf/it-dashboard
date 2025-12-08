@@ -41,7 +41,7 @@ function CyclePages() {
 }
 
 function LoadPage(pagenumber, src, debug=false) {
-    rnd = Math.floor((Math.random() * 5) + 1);
+    rnd = Math.floor((Math.random() * 6) + 1);
     if(debug){
         folder = 'source'
     }else{
@@ -59,7 +59,7 @@ function LoadPage(pagenumber, src, debug=false) {
                     //active entfernen
                     $("#navigation>li.active").removeClass("active");
 
-                    if (pagenumber != "FUN" && pagenumber != "YT" && pagenumber != "RELOAD" && pagenumber != "URGENT") {
+                    if (pagenumber != "FUN" && pagenumber != "YT" && pagenumber != "WHEEL" && pagenumber != "RELOAD" && pagenumber != "URGENT") {
                         CurrentPage = pagenumber;
                         //Ein neuen active setzen
                         $("#navigation li:nth-child(" + pagenumber + ")").addClass("active");
@@ -169,6 +169,13 @@ $(document).ready(function () {
                         LoadPage("YT", message);
                     }
                     break;
+				case "!roll":
+                    if (getURLParameter('Name') == "Main") {
+                        message = message.replace("!roll ", "");
+						rolls = message.split(" ");
+                        startSpin(rolls[0],rolls[1],rolls[2]);
+                    }
+					break;
                 case "!bus":
                     if (getURLParameter('Name') == "Main") {
                         message = message.replace("!bus ", "");
@@ -225,7 +232,7 @@ $(document).ready(function () {
                         Page_AJAX.abort();
                     }
                     message = message.replace("!page ", "");
-                    if (message === "FUN") {
+                    if (message === "FUN" || message === "WHEEL" ) {
                         if (getURLParameter('Name') === "Main") {
                             LoadPage(message);
                         }
@@ -366,6 +373,16 @@ $(document).ready(function () {
                                 dksound.load();
                                 dksound.volume = 0.4;
                                 //dinosound.play();
+                            }
+                            break;
+                        case 6:
+                            if (catstart && getURLParameter('Name') === "Main") {
+                                $('#cat').html('<img id="michaelimg" src="./img/michael.gif">');
+                                catstart = false;
+                                var heeheesound = new Audio('./res/heehee.mp3');
+                                heeheesound.load();
+                                heeheesound.volume = 0.3;
+                                heeheesound.play();
                             }
                             break;
                     }

@@ -52,6 +52,7 @@
                         <li class="active"><a href="./youtube.php">YouTube</a></li>
                         <li><a href="./index.php">Adminpanel</a></li>
                         <li><a href="./features.php">Feature Request</a></li>
+						<li><a href="./julianometer.php">Julian-O-Meter</a></li>
                         <li><a href="./newtoast.php">Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
@@ -116,7 +117,7 @@
 </body>
 <script src="../monitor/lib/js/jquery.min.js"></script>
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
-<script src="../config.js.php"></script>
+<script type="text/javascript" src="../config.js.php"></script>
 <script>
     var sliding = false;
     function clean(obj) {

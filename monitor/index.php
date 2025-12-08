@@ -131,6 +131,11 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                                 <i class="icon fas fa-poo"></i><span class="title">DERDACK</span>
                             </a>
                         </li>
+						<li>
+                            <a href="javascript:ButtonPage(10);">
+                                <i class="icon fas fa-tachometer-alt"></i><span class="title">Julian-O-Meter</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.navbar-collapse -->
@@ -171,9 +176,9 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
         <script type="text/javascript" src="lib/js/bootstrap-switch.min.js"></script>
         <script type="text/javascript" src="lib/js/jquery.matchHeight-min.js"></script>
         <script type="text/javascript" src="lib/js/Chart.bundle.js"></script>
+        <script type="text/javascript" src="../config.js.php"></script>
 
         <!-- Javascript -->
-        <script type="text/javascript" src="../config.js.php"></script>
         <script type="text/javascript" src="js/app.js?random=<?php echo uniqid(); ?>"></script>
 
         <script src='./js/snowfall.min.jquery.js'></script>

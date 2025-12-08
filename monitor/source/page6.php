@@ -19,7 +19,7 @@ if ($conn) {
         echo "<pre>";
         die(print_r(sqlsrv_errors(), true));
     }
-    if ($result = sqlsrv_query($conn, "SELECT DISTINCT [Job ID],[Client Name],[Policy Name],[Start Time],[End Time] FROM [IT-Dashboard].[dbo].[IT-Dashboard_Backup_Failed] WHERE [Timestamp] > DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),0)")) {
+    if ($result = sqlsrv_query($conn, "SELECT DISTINCT [name],[objectType],[location],[lastSnapshot],[pullTime],[slaDomainName] FROM [IT-Dashboard].[dbo].[IT-Dashboard_Backup_Failed] WHERE [pullTime] > DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),0)")) {
         $Failed = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
             array_push($Failed, $row);
@@ -36,33 +36,35 @@ if ($conn) {
 
 
 <div class="row">
-    <div class="col-sm-6 col-xs-12">
+    <div class="col-sm-8 col-xs-12">
         <table class="table table-responsive table-striped">
             <thead>
             <tr>
-                <th width="10%" class="h4">Job ID</th>
-                <th width="25%" class="h4">Client Name</th>
-                <th width="25%" class="h4">Policy Name</th>
-                <th width="20%" class="h4">Start Time</th>
-                <th width="20%" class="h4">End Time</th>
+                <th width="10%" class="h4">Typ</th>
+                <th width="20%" class="h4">Name</th>
+                <th width="30%" class="h4">Location</th>
+                <th width="15%" class="h4">Latest Snapshot</th>
+                <th width="15%" class="h4">Last Pull</th>
+				<th width="10%" class="h4">SLA</th>
             </tr>
             </thead>
             <tbody>
             <?php
             foreach ($Failed as $item) {
                 echo "<tr>";
-                echo "<td class='h4'>" . $item["Job ID"] . "</td>";
-                echo "<td class='h4'>" . $item["Client Name"] . "</td>";
-                echo "<td class='h4'>" . $item["Policy Name"] . "</td>";
-                echo "<td class='h4'>" . date_format($item["Start Time"], 'd.m.Y H:i') . "</td>";
-                echo "<td class='h4'>" . date_format($item["End Time"], 'd.m.Y H:i') . "</td>";
+                echo "<td class='h4'>" . $item["objectType"] . "</td>";
+                echo "<td class='h4'>" . $item["name"] . "</td>";
+                echo "<td class='h4'>" . $item["location"] . "</td>";
+                echo "<td class='h4'>" . date_format($item["lastSnapshot"], 'd.m.Y H:i') . "</td>";
+                echo "<td class='h4'>" . date_format($item["pullTime"], 'd.m.Y H:i') . "</td>";
+				echo "<td class='h4'>" . $item["slaDomainName"] . "</td>";
                 echo "</tr>";
             }
             ?>
             </tbody>
         </table>
     </div>
-    <div class="col-sm-6 col-xs-12">
+    <div class="col-sm-4 col-xs-12">
         <div>
             <canvas id="Backup" class="chart"></canvas>
         </div>

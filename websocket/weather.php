@@ -21,22 +21,22 @@ $overlayPath = Array(
     'https://tilecache.rainviewer.com/v2/radar/'.$Timestamp.'/256/7/69/43.png?color=6'
 );
 $srcImagePaths = Array(
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/40/66',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/40/67',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/40/68',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/40/69',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/41/66',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/41/67',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/41/68',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/41/69',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/42/66',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/42/67',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/42/68',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/42/69',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/43/66',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/43/67',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/43/68',
-    'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/7/43/69'
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/40/66',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/40/67',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/40/68',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/40/69',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/41/66',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/41/67',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/41/68',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/41/69',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/42/66',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/42/67',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/42/68',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/42/69',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/43/66',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/43/67',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/43/68',
+    'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/7/43/69'
 );
 
 $tileWidth = $tileHeight = 256;

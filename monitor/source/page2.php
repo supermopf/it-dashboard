@@ -15,23 +15,16 @@ $conn = sqlsrv_connect($serverName, $connectionInfo);
 
 if ($conn) {
     if ($result = sqlsrv_query($conn,"
-        SELECT COUNT (referencenumber) AS NewTickets
-        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
-        WHERE registrationtime >= CAST(GETDATE() AS DATE) 
-        AND [keyword] NOT LIKE 'zz_%'  
-        AND [keyword] NOT LIKE 'ERP%'
-        AND [keyword] NOT LIKE 'Programmierung%'
-        AND [keyword] NOT LIKE 'PDM%'
-        AND [keyword] NOT LIKE 'Facili%'
-        AND [keyword] NOT LIKE 'Mobi%'
-        AND [keyword] NOT LIKE 'OMS%'
-        AND [keyword] NOT LIKE 'ECM%'
-        AND [keyword] NOT LIKE 'BI%'
-        AND [keyword] NOT LIKE 'DPL%'
-        AND [keyword] NOT LIKE 'EDI%'
-        AND [keyword] NOT LIKE 'CST%'"
+select count(ticket.referencenumber) NewTickets
+from (select 'Incident' type, * from increcsystem union all select 'Service Request' type, * from sereresystem) ticket
+    inner join (select * from increcsusystem union all select * from sereresusystem) su on ticket.caseid = su.caseid and su.suindex = 1
+    left join (select * from increcgeneral union all select * from sereregeneral) general on ticket.caseid = general.caseid
+	inner join hlsyscaseassignment assignment ON assignment.caseid = ticket.caseid
+where DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), su.registrationtime) >= convert(date, getdate())
+and assignment.caseassignedteamname in ('Infrastructure 3rd Level', 'ITSM Service Desk', 'Workplace Service 2nd Level', 'Infrastructure 2nd Level')
+"
     )) {
-        $NewTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+        $NewTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)["NewTickets"];
     } else {
         echo "<pre>";
         die(print_r(sqlsrv_errors(), true));
@@ -40,50 +33,75 @@ if ($conn) {
 
 
     if ($result = sqlsrv_query($conn,"
-        SELECT Count([referencenumber]) as ClosedTickets
-        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
-        WHERE  CAST([closingtime] AS DATE) = CAST (GETDATE() as DATE)
-        AND [keyword] NOT LIKE 'zz_%'  
-        AND [keyword] NOT LIKE 'ERP%'
-        AND [keyword] NOT LIKE 'Programmierung%'
-        AND [keyword] NOT LIKE 'PDM%'
-        AND [keyword] NOT LIKE 'Facili%'
-        AND [keyword] NOT LIKE 'Mobi%'
-        AND [keyword] NOT LIKE 'OMS%'
-        AND [keyword] NOT LIKE 'ECM%'
-        AND [keyword] NOT LIKE 'BI%'
-        AND [keyword] NOT LIKE 'DPL%'
-        AND [keyword] NOT LIKE 'EDI%'
-        AND [keyword] NOT LIKE 'CST%'"
+select count(ticket.referencenumber) ClosedTickets
+from (select 'Incident' type, * from increcsystem union all select 'Service Request' type, * from sereresystem) ticket
+    inner join (select * from increcsusystem union all select * from sereresusystem) su on ticket.caseid = su.caseid and su.suindex = 1
+    left join hlsyslistitem state on ticket.internalstate = state.listitemid
+    left join (select * from increcgeneral union all select * from sereregeneral) general on ticket.caseid = general.caseid
+	inner join hlsyscaseassignment assignment ON assignment.caseid = ticket.caseid
+where DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), ticket.lastmodified) >= convert(date, getdate())
+and assignment.caseassignedteamname in ('Infrastructure 3rd Level', 'ITSM Service Desk', 'Workplace Service 2nd Level', 'Infrastructure 2nd Level')
+and state.name in ('SOLVED', 'CLOSED')
+"
     )) {
-        $ClosedTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+        $ClosedTickets = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)["ClosedTickets"];
     } else {
         echo "<pre>";
         die(print_r(sqlsrv_errors(), true));
     }
 
     if ($result = sqlsrv_query($conn,"
-        SELECT Count([referencenumber]) As NumberOfTickets, DATEPART(HOUR, [registrationtime]) AS Hour
-        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
-        WHERE registrationtime >= CAST(GETDATE() AS DATE) 
-        AND [keyword] NOT LIKE 'zz_%'  
-        AND [keyword] NOT LIKE 'ERP%'
-        AND [keyword] NOT LIKE 'Programmierung%'
-        AND [keyword] NOT LIKE 'PDM%'
-        AND [keyword] NOT LIKE 'Facili%'
-        AND [keyword] NOT LIKE 'Mobi%'
-        AND [keyword] NOT LIKE 'OMS%'
-        AND [keyword] NOT LIKE 'ECM%'
-        AND [keyword] NOT LIKE 'BI%'
-        AND [keyword] NOT LIKE 'DPL%'
-        AND [keyword] NOT LIKE 'EDI%'
-        AND [keyword] NOT LIKE 'CST%'
-        
-        GROUP BY DATEPART(HOUR, [registrationtime])"
+with allHours ([hour])
+as (
+    select 0 as [hour]
+    union all
+    select [hour] + 1
+    from allHours
+    where [hour] < 24
+    )
+
+select [hour], count(t.nummer) [tickets], [team]
+from allHours
+left join (
+    select
+	    ticket.referencenumber [nummer]
+       ,caseassignedteamname [team]
+	   ,case when DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), ticket.creationtime) >= convert(date, getdate())
+	      then datepart(hour, DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), ticket.creationtime))
+	      else 0
+	    end [opened]
+	   ,case when state.name in ('SOLVED', 'CLOSED') and DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), ticket.lastmodified) >= convert(date, getdate())
+	      then datepart(hour, DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), ticket.lastmodified))
+	      else 25
+	    end [closed]
+    from (select 'Incident' type, * from increcsystem union all select 'Service Request' type, * from sereresystem) ticket
+        inner join (select * from increcsusystem union all select * from sereresusystem) su on ticket.caseid = su.caseid and su.suindex = 1
+        left join hlsyslistitem state on ticket.internalstate = state.listitemid
+    	inner join hlsyscaseassignment assignment ON assignment.caseid = ticket.caseid
+    where
+        assignment.caseassignedteamname in ('Infrastructure 3rd Level', 'ITSM Service Desk', 'Workplace Service 2nd Level', 'Infrastructure 2nd Level')
+		and ticket.lastmodified > GETDATE() - 365
+        and (
+    	  state.name not in ('SOLVED', 'CLOSED')
+    	  or (
+    	    ticket.lastmodified >= convert(date, getdate())
+    	    and state.name in ('SOLVED', 'CLOSED')
+          )
+        )
+    ) t on [hour] < t.closed and [hour] >= t.opened
+where datepart(hour, getdate()) >= [hour]
+group by [team], [hour]
+order by [team], [hour]
+"
     )) {
         $TicketChart = array();
+        $Teams = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-            $TicketChart[$row['Hour']] = $row['NumberOfTickets'];
+            if (end($Teams) != $row['team']) {
+                $TicketChart[$row['team']] = array();
+                $Teams[] = $row['team'];
+            }
+            $TicketChart[$row['team']][$row['hour']] = $row['tickets'];
         }
     } else {
         echo "<pre>";
@@ -93,26 +111,31 @@ if ($conn) {
 
 
     if ($result = sqlsrv_query($conn, "
-        SELECT *
-        FROM [HL_Data].[dbo].[SBl_SSa_IncRecSerReq_kw]
-        WHERE registrationtime >= CAST(GETDATE() AS DATE) 
-        AND [keyword] NOT LIKE 'zz_%'  
-        AND [keyword] NOT LIKE 'ERP%'
-        AND [keyword] NOT LIKE 'Programmierung%'
-        AND [keyword] NOT LIKE 'PDM%'
-        AND [keyword] NOT LIKE 'Facili%'
-        AND [keyword] NOT LIKE 'Mobi%'
-        AND [keyword] NOT LIKE 'OMS%'
-        AND [keyword] NOT LIKE 'ECM%'
-        AND [keyword] NOT LIKE 'BI%'
-        AND [keyword] NOT LIKE 'DPL%'
-        AND [keyword] NOT LIKE 'EDI%'
-        AND [keyword] NOT LIKE 'CST%'
-        ORDER BY [registrationtime]
+select
+     ticket.referencenumber referencenumber
+	--,ticket.promisedsolutiontime promisedsolutiontime
+    --,assignment.caseassignedpersonname assignedagent
+	,general.subject subject
+	,priority.name priority
+	,requester.calnam requester
+from (select 'Incident' type, * from increcsystem union all select 'Service Request' type, * from sereresystem) ticket
+    inner join (select * from increcsusystem union all select * from sereresusystem) su on ticket.caseid = su.caseid and su.suindex = 1
+    left join hlsyslistitem state on ticket.internalstate = state.listitemid
+    left join (select * from increccalinf union all select * from sererecalinf) requester on ticket.caseid = requester.caseid
+    left join (select * from increcgeneral union all select * from sereregeneral) general on ticket.caseid = general.caseid
+    --left join (select * from increcdescdestex union all select * from sereredescdestex) description on ticket.caseid = description.caseid
+    inner join hlsyslistitem priority on general.priority = priority.listitemid and priority.name in ('PriorityCritical', 'PriorityHigh')
+    --inner join (select * from increccatgencale1 union all select * from sererecatgencale1) category on ticket.caseid = category.caseid
+	inner join hlsyscaseassignment assignment ON assignment.caseid = ticket.caseid
+	--left join serteageneral team ON team.orgunitid = assignment.caseassignedteamid
+where DATEADD(MI, DATEDIFF(MI, GETUTCDATE(), GETDATE()), su.registrationtime) >= convert(date, getdate() - 7)
+and assignment.caseassignedteamname in ('Infrastructure 3rd Level', 'ITSM Service Desk', 'Workplace Service 2nd Level', 'Infrastructure 2nd Level')
+and state.name not in ('SOLVED', 'CLOSED')
+order by referencenumber desc
 ")) {
-        $array = array();
+        $prioTickets = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-            array_push($array, $row);
+            array_push($prioTickets, $row);
         }
     } else {
         echo "<pre>";
@@ -128,8 +151,8 @@ if ($conn) {
         <div class="card dark summary-inline">
             <div class="card-body">
                 <div class="content">
-                    <div class="title">Heute geöffnete Tickets</div>
-                    <div class="title"><?php echo $NewTickets["NewTickets"]; ?></div>
+                    <div class="title">Heute eröffnete Tickets</div>
+                    <div class="title"><?= $NewTickets ?></div>
                 </div>
                 <div class="clear-both"></div>
             </div>
@@ -140,7 +163,7 @@ if ($conn) {
             <div class="card-body">
                 <div class="content">
                     <div class="title">Heute geschlossene Tickets</div>
-                    <div class="title"><?php echo $ClosedTickets["ClosedTickets"]; ?></div>
+                    <div class="title"><?= $ClosedTickets ?></div>
                 </div>
                 <div class="clear-both"></div>
             </div>
@@ -152,7 +175,7 @@ if ($conn) {
         <div class="card">
             <div class="card-header">
                 <div class="card-title">
-                    <div class="title">Heutiges Ticketaufkommen</div>
+                    <div class="title">Infotisch</div>
                 </div>
             </div>
             <div class="card-body no-padding">
@@ -162,28 +185,33 @@ if ($conn) {
     </div>
     <div class="col-lg-6">
         <div class="card summary-inline">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title">Tickets mit Priorität hoch🔥 oder top💥</div>
+                </div>
+            </div>
             <div class="card-body">
-                <!-- Table -->
-                <table class="table table-responsive">
+                <table class="<?php echo (count($prioTickets) == 0) ? 'collapse ' : '' ?>table table-responsive">
                     <thead>
                     <tr>
+                        <th style="width: 0%;" class="h4"></th>
                         <th style="width: 10%;" class="h4">Ticketnummer</th>
+                        <th style="width: 10%;" class="h4">Anforderer</th>
                         <th class="h4">Betreff</th>
                     </tr>
                     </thead>
                     <tbody>
                     <?php
-                    $time = new DateTime();
-                    foreach ($array as $key => $Value) {
-                        $dateObj = $array[$key]["promisedsolutiontime"];
-                        $color = "";
-                        $assignedagent = preg_replace('/(?<!\ )[A-Z]/', ' $0', $array[$key]["assignedagent"]);
-
-
-                        echo "<tr class='helplinetable'>";
-                        echo "<td class='$color h4 text'><span>" . $array[$key]["referencenumber"] . "</span></td>";
-                        echo "<td class='$color h4 text'><span>" . $array[$key]["subject"] . "</span></td>";
-                        echo "</tr>";
+                    foreach ($prioTickets as $key => $ticket) {
+                        $prio =  ($ticket["priority"] == 'PriorityCritical') ? '💥' : '🔥';
+                    ?>
+                        <tr class='helplinetable'>
+                            <td class='h4 text'><span><?= $prio ?></span></td>
+                            <td class='h4 text'><span><?= $ticket["referencenumber"] ?></span></td>
+                            <td class='h4 text'><span><?= $ticket["requester"] ?></span></td>
+                            <td class='h4 text'><span><?= $ticket["subject"] ?></span></td>
+                        </tr>
+                    <?php
                     }
                     ?>
                     </tbody>
@@ -194,54 +222,32 @@ if ($conn) {
 </div>
 
 <?php
+
 $ChartLabels = array();
-$ChartData = array();
-for($i = 0; $i <= 23; $i++){
+for($i = 0; $i <= 24; $i++){
     $time = strtotime($i . ':00:00');
-    if(isset($TicketChart[$i])){
-        array_push($ChartLabels,date("G:i",$time));
-        array_push($ChartData, $TicketChart[$i]);
-    }else{
-        array_push($ChartLabels, date("G:i",$time));
-        array_push($ChartData, 0);
+    array_push($ChartLabels, date("G:i",$time));
+}
+
+$ChartDatasets = array();
+foreach ($TicketChart as $team => $data) {
+    $ChartDatasets[$team] = array();
+
+    for($i = 0; $i <= 24; $i++){
+        if(isset($data[$i])){
+            array_push($ChartDatasets[$team], $data[$i]);
+        }else{
+            array_push($ChartDatasets[$team], null);
+        }
     }
 }
+
 $ChartLabels = json_encode($ChartLabels);
-$ChartData = json_encode($ChartData);
+
+//$ChartData = json_encode($ChartData);
 ?>
 
 <script>
-    const verticalLinePlugin = {
-        getLinePosition: function (chart, pointIndex) {
-            const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
-            const data = meta.data;
-            return data[pointIndex]._model.x;
-        },
-        renderVerticalLine: function (chartInstance, pointIndex) {
-            const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
-            const scale = chartInstance.scales['y-axis-0'];
-            const context = chartInstance.chart.ctx;
-
-            // render vertical line
-            context.beginPath();
-            context.strokeStyle = 'rgba(255,99,132,1)';
-            context.moveTo(lineLeftOffset, scale.top);
-            context.lineTo(lineLeftOffset, scale.bottom);
-            context.stroke();
-
-        },
-
-        afterDatasetsDraw: function (chart, easing) {
-            if (chart.config.lineAtIndex) {
-                chart.config.lineAtIndex.forEach(pointIndex => this.renderVerticalLine(chart, pointIndex));
-            }
-        }
-    };
-
-    Chart.plugins.register(verticalLinePlugin);
-
-
-
 var options = {
     scales: {
         xAxes: [{
@@ -252,31 +258,56 @@ var options = {
         yAxes: [{
             ticks: {
                 min: 0,
-                max: 10,
+                //max: 10,
                 fontSize: 15
             }
         }]
     },
     elements: {
         line: {
-            tension: 0.3
+            tension: 0.1
         }
     },
     borderCapStyle: 'butt'
 };
+
+//'Infrastructure 3rd Level', 'ITSM Service Desk', 'Workplace Service 2nd Level', 'Infrastructure 2nd Level'
 var data = {
-        labels: <?php echo $ChartLabels ?>,
-        datasets: [{
-        label: 'Anzahl Tickets',
-        data: <?php echo $ChartData ?>,
-        backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-        ],
-        borderColor: [
-            'rgba(255,99,132,1)',
-        ],
-        borderWidth: 1
-    }]
+        labels: <?= $ChartLabels ?>,
+        datasets: [
+            {
+                label: 'ITSM Service Desk',
+                data: <?php echo json_encode($ChartDatasets['ITSM Service Desk']) ?>,
+                spanGaps: false,
+                fill: false,
+                borderColor: ['rgba(115, 255, 0, 1)'],
+                borderWidth: 1
+            },
+            {
+                label: 'Workplace Service 2nd Level',
+                data: <?php echo json_encode($ChartDatasets['Workplace Service 2nd Level']) ?>,
+                spanGaps: false,
+                fill: false,
+                borderColor: ['rgba(228, 224, 18, 1)'],
+                borderWidth: 1
+            },
+            {
+                label: 'Infrastructure 2nd Level',
+                data: <?php echo json_encode($ChartDatasets['Infrastructure 2nd Level']) ?>,
+                spanGaps: false,
+                fill: false,
+                borderColor: ['rgba(247, 142, 5, 1)'],
+                borderWidth: 1
+            },
+            {
+                label: 'Infrastructure 3rd Level',
+                data: <?php echo json_encode($ChartDatasets['Infrastructure 3rd Level']) ?>,
+                spanGaps: false,
+                fill: false,
+                borderColor: ['rgba(245, 14, 64, 1)'],
+                borderWidth: 1
+            }
+        ]
 };
 ctx = $('#TicketChart').get(0).getContext('2d');
 

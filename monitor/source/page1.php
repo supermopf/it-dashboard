@@ -11,74 +11,57 @@
 require("../../config.php");
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
-if ($conn) {
-    //Haben wir Kontakt?
-    if ($result = sqlsrv_query($conn, "SELECT *  FROM [IT-Dashboard].[dbo].[IT-Dashboard_APC-Temperature] WHERE [Timestamp] > DATEADD(hour,-1,GETDATE()) ORDER BY [Timestamp] ASC")) {
-        $array = array();
-        while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
-            array_push($array, $row);
+if( $conn ) {
+     //echo "Connection established.<br />";
+}else{
+     echo "Connection could not be established.<br /><pre>";
+     die( print_r( sqlsrv_errors(), true));
+}
+
+$query = "
+SELECT *
+FROM [IT-Dashboard].[dbo].[IT-Dashboard_APC-Temperature]
+WHERE [Timestamp] >= DATEADD(Minute, -120,GETDATE())
+AND [Location] IN ('GerberEG', 'GerberOG', 'Street One', 'CECIL')
+ORDER BY [Location] ASC, [Timestamp] ASC
+";
+
+if ($result = sqlsrv_query($conn, $query)) {
+    $LocationData = [];
+    while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+        if (!isset($LocationData[$row['Location']])) {
+            $LocationData[$row['Location']] = [];
         }
-    } else {
-        echo "<pre>";
-        die(print_r(sqlsrv_errors(), true));
+        $LocationData[$row['Location']][] = $row;
     }
 } else {
     echo "<pre>";
     die(print_r(sqlsrv_errors(), true));
 }
 
-$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID=' . APIKEY_openweathermap . '&lang=de');
 $oIsernhagen = json_decode($json);
-$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Celle,de&APPID='.APIKEY_openweathermap.'&lang=de');
-$oCelle = json_decode($json);
+//$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Celle,de&APPID=' . APIKEY_openweathermap . '&lang=de');
+//$oCelle = json_decode($json);
 
-
-
-
-$numbers = array();
-foreach ($array as $value) {
-    $numbers[] = $value["Temperature"];
-    $numbers[] = $value["Humidity"];
-}
-$max = @max($numbers);
-$maxnumber = ceil($max / 20);
-
-//IDs mit
-$config = array(
-    1 => "CECIL MEN",
-    2 => "Street One",
-    3 => "CECIL"
+$Locations = array(
+    "CECIL"      => "CECIL",
+    "GerberOG"   => "Gerberstraße OG",
+    "Street One" => "Street One",
+    "GerberEG"   => "Gerberstraße EG",
 );
 
-$DisplayNameConfig = array(
-    1 => "CECIL MEN",
-    2 => "Street One",
-    3 => "CECIL"
-);
-
-
-$Values_Now = [""];
-foreach ($config as $value) {
-    $temp_array = [];
-    for ($i = 0; $i < count($array); $i++) {
-        if ($array[$i]["Location"] == $value) {
-            array_push($temp_array, $array[$i]);
-        }
-    }
-    array_push($Values_Now, end($temp_array));
-}
 ?>
 <div class="row">
     <div class="col-lg-6">
         <div class="row">
             <div class="card yellow summary-inline">
                 <div class="card-body">
-                    <img height="128px" src="<?php echo "./img/weather/".$oIsernhagen->weather[0]->icon.".png" ?>"/>
+                    <img height="128px" src="<?= "./img/weather/" . $oIsernhagen->weather[0]->icon . ".png" ?>"/>
                     <div class="content">
-                        <div class="title"><?php echo $oIsernhagen->name ?>
-                            : <?php echo round(($oIsernhagen->main->temp - 273.15),1) ?> °C
+                        <div class="title"><?= $oIsernhagen->name ?>: <?= number_format(round(($oIsernhagen->main->temp - 273.15), 1), 1, ",", ".") ?> °C
                         </div>
-                        <div class="title"><?php echo $oIsernhagen->weather[0]->description ?></div>
+                        <div class="title"><?= $oIsernhagen->weather[0]->description ?></div>
                     </div>
                     <div class="clear-both"></div>
                 </div>
@@ -86,61 +69,43 @@ foreach ($config as $value) {
         </div>
         <div class="row top-buffer">
             <div class="col-sm-12">
+<?php
+
+$i = 0;
+foreach ($Locations as $name => $displayname) {
+    $data = $LocationData[$name];
+    if ($i % 2 == 0) {
+?>
                 <div class="row">
-                    <div class="col-sm-6 col-xs-12">
-                        <div class="card state-<?php echo $Values_Now[1]["StatusCode"] ?>">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="title">
-                                        <div class="col-sm-8"><?php echo $DisplayNameConfig[1] ?></div>
-                                        <div class="col-sm-2 blue"><?php echo $Values_Now[1]["Humidity"]; ?>%</div>
-                                        <div class="col-sm-2 red"><?php echo $Values_Now[1]["Temperature"]; ?>°C</div>
-                                    </div>
+<?php
+    }
+?>
+                <div class="col-sm-6 col-xs-12">
+                    <div class="card state-<?= end($data)["StatusCode"] ?>">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="title">
+                                    <div class="col-sm-8"><?= $displayname ?></div>
+                                    <div class="col-sm-2 blue"><?= end($data)["Humidity"] ?>%</div>
+                                    <div class="col-sm-2 red"><?= end($data)["Temperature"] ?>°C</div>
                                 </div>
-                            </div>
-                            <div class="card-body no-padding">
-                                <canvas id="wetter1" class="chart" width="478" height="260"
-                                        style="width: 478px; height: 260px;"></canvas>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-sm-6 col-xs-12">
-                        <div class="card state-<?php echo $Values_Now[2]["StatusCode"] ?>">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="title">
-                                        <div class="col-sm-8"><?php echo $DisplayNameConfig[2] ?></div>
-                                        <div class="col-sm-2 blue"><?php echo $Values_Now[2]["Humidity"]; ?>%</div>
-                                        <div class="col-sm-2 red"><?php echo $Values_Now[2]["Temperature"]; ?>°C</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body no-padding">
-                                <canvas id="wetter2" class="chart" width="478" height="260"
-                                        style="width: 478px; height: 260px;"></canvas>
-                            </div>
+                        <div class="card-body no-padding">
+                            <canvas id="location<?= $i ?>" class="chart" width="478" height="260"
+                                    style="width: 478px; height: 260px;"></canvas>
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-sm-8 col-lg-offset-2">
-                        <div class="card state-<?php echo $Values_Now[3]["StatusCode"] ?>">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="title">
-                                        <div class="col-sm-8"><?php echo $DisplayNameConfig[3] ?></div>
-                                        <div class="col-sm-2 blue"><?php echo $Values_Now[3]["Humidity"]; ?>%</div>
-                                        <div class="col-sm-2 red"><?php echo $Values_Now[3]["Temperature"]; ?>°C</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body no-padding">
-                                <canvas id="wetter3" class="chart" width="478" height="260"
-                                        style="width: 478px; height: 260px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
+<?php
+    if ($i % 2 == 1) {
+?>
                 </div>
+<?php
+    }
+    $i++;
+}
+                ?>
             </div>
         </div>
     </div>
@@ -152,17 +117,34 @@ foreach ($config as $value) {
                 </div>
             </div>
             <div class="card-body no-padding">
-                <img class="img-responsive" src="../radar.png?nocache=<?php echo uniqid(); ?>" />
+                <img class="img-responsive" src="../radar.png?nocache=<?= uniqid() ?>" />
             </div>
+            <div class="card-footer"><br></div>
         </div>
     </div>
 </div>
 <script>
+    var minDate = new Date();
+    minDate.setHours(minDate.getHours() - 2);
+
     var options = {
         scales: {
             xAxes: [{
+                type: 'time',
+                time: {
+                    unit: 'minute',
+                    min: minDate,
+                    max: Date.now(),
+                    displayFormats: {
+                        minute: 'HH:mm'
+                    },
+                    unitStepSize: 30
+                },
                 ticks: {
-                    fontSize: 15
+                    fontSize: 15,
+                    minRotation: 0,
+                    maxRotation: 0,
+                    autoSkip: true
                 }
             }],
             yAxes: [{
@@ -180,74 +162,53 @@ foreach ($config as $value) {
 </script>
 <?php
 
+$i = 0;
 //Für jedes Diagramm
-for ($i = 1; $i <= 4; $i++) {
-    echo PHP_EOL . "<!-- Wetter $i --> ";
-    echo '<script type="text/javascript">';
-    echo "
-            ctx = $('#wetter$i').get(0).getContext('2d');
-            var data = {
-            labels: [";
-    $labels = "";
-    $counter = 0;
-    foreach ($array as $key => $value) {
-        if ($array[$key]["Location"] == $config[$i]) {
-            $dateObj = $array[$key]["Timestamp"];
-            //Haben wir es geschafft Rick?
-            if ($dateObj instanceof \DateTime) {
-                //Nur alle 5 Minuten anzeigen
-                if ($dateObj->format('i') % 10 == 0) {
-                    $labels .= "'" . $dateObj->format('H:i') . "',";
-                }
-            }
-        }
-    }
-    echo substr($labels, 0, -1);
-    echo "],
-                datasets: [
-                    {
-                        label: \"Temperatur in °C\",
+foreach ($Locations as $name => $displayname) {
+    $data = $LocationData[$name];
+    $timestamp_labels = array_map(function($row) {
+        return $row['Timestamp']->format('c');
+    }, $data);
+
+    $temperature_data = array_column($data, 'Temperature');
+    $humidity_data = array_column($data, 'Humidity');
+
+    ?>
+    <!-- Klima <?= $name ?> -->
+    <script type="text/javascript">
+        ctx = $('#location<?= $i ?>').get(0).getContext('2d');
+        var data = {
+        labels: <?= json_encode($timestamp_labels) ?>,
+            datasets: [
+                {
+                    pointRadius: 1,
+                    label: "Temperatur in °C",
+                    backgroundColor: [
+                        'rgba(199, 13, 59, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(199, 13, 58, 1)'
+                    ],
+                    borderWidth: 1,
+                    data: <?= json_encode($temperature_data) ?>
+                },{
+                    pointRadius: 1,
+                    label: "Luftfeuchtigkeit in %",
                         backgroundColor: [
-                            'rgba(199, 13, 58, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(199, 13, 58,1)'
-                        ],
-                        borderWidth: 1,
-                        data: [";
-    $data = "";
-    foreach ($array as $key => $value) {
-
-        if ($array[$key]["Location"] == $config[$i]) {
-            $data .= $array[$key]["Temperature"] . ",";
-        }
-    }
-    echo substr($data, 0, -1);
-    echo "]
-                    },{
-                        label: \"Luftfeuchtigkeit in %\",
-                         backgroundColor: [
-                            'rgba(69, 150, 155,0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(69, 150, 155,1)'
-                        ],
-                        borderWidth: 1,
-                        data: [";
-    $data = "";
-    foreach ($array as $key => $value) {
-
-        if ($array[$key]["Location"] == $config[$i]) {
-            $data .= $array[$key]["Humidity"] . ",";
-        }
-    }
-    echo substr($data, 0, -1);
-
-    echo "]}]};" . PHP_EOL;
-
-    echo "var chartInstance" . $i . " = new Chart(ctx, {type: 'line',data: data,options: options})";
-    //echo "var LineChart$i = new Chart(ctx).Line(data,options);";
-    echo '</script>';
+                        'rgba(69, 150, 155, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(69, 150, 155, 1)'
+                    ],
+                    borderWidth: 1,
+                    data: <?= json_encode($humidity_data) ?>
+                }
+            ]
+        };
+    var chartInstance<?= $i ?> = new Chart(ctx, {type: 'line', data: data, options: options});
+</script>
+<?php
+    $i++;
 }
 ?>
 

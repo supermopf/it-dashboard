@@ -5,7 +5,6 @@
  * Date: 07.03.2018
  * Time: 12:41
  */
-
 require('../config.php');
 
 $root = DASHBOARD_BASE_URL . "/monitor/source/";
@@ -20,7 +19,8 @@ $pages = array(
     "page6.php",
     "page7.php",
     "page8.php",
-    "page9.php"
+    "page9.php",
+	"page10.php"
 );
 
 

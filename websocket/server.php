@@ -25,12 +25,14 @@ $Page = 1;
 $FUN = False;
 $Cycle = True;
 $Cat = False;
+$Wheel = False;
 $Snow = False;
 $FUN_active = False;
+$Wheel_active = False;
 $BusActive = False;
 $lasttimestamp = strtotime("now");
 $lastsongpull = strtotime("now");
-$Radio = False;
+$Radio = True;
 $Radiostation = DEFAULT_RADIOSTATION;
 $RadioStationIcon = "";
 $Radiovolume = 0.05;
@@ -108,7 +110,7 @@ while (true) {
 
     //Cycle thoose pages
     if ($Timestamp <= strtotime('-' . $CycleTime . ' Seconds') AND $Cycle == True) {
-        $random = rand(0, 99);
+        $random = rand(1, 99);
         if ($random == 88) {
             $now = new DateTime();
             $commmand = mask(json_encode(array('type' => 'console', 'message' => "Miau @ " . $now->format('Y-m-d H:i:s')))); //prepare json data
@@ -119,26 +121,26 @@ while (true) {
         }
         $Timestamp = time();
         if ($FUN) {
-            $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page FUN"))); //prepare json data
-            send_message($commmand);
+			$commmand = mask(json_encode(array('type' => 'command', 'message' => "!page FUN"))); //prepare json data
+			send_message($commmand);
             $FUN_active = True;
         } else {
-            if ($Page == 10) {
-                $Page = 1;
-                //Check for Snow
-                $json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
-                $oIsernhagen = json_decode($json);
-                if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
-                    $Snow = True;
-                } else {
-                    $Snow = False;
-                }
-            } else {
-                $Page++;
-            }
-            $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page $Page"))); //prepare json data
-            send_message($commmand); //notify all users about new connection
-            $FUN_active = False;
+			if ($Page == 10) {
+				$Page = 1;
+				//Check for Snow
+				$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+				$oIsernhagen = json_decode($json);
+				if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
+					$Snow = True;
+				} else {
+					$Snow = False;
+				}
+			} else {
+				$Page++;
+			}
+			$commmand = mask(json_encode(array('type' => 'command', 'message' => "!page $Page"))); //prepare json data
+			send_message($commmand); //notify all users about new connection
+			$FUN_active = False;
         }
     }
 
@@ -149,6 +151,7 @@ while (true) {
             "type" => "update",
             "Page" => $Page,
             "FUN" => $FUN ? 'true' : 'false',
+            "Wheel" => $Wheel ? 'true' : 'false',
             "Radio" => $Radio ? 'true' : 'false',
             "Radiostation" => $Radiostation,
             "Radiovolume" => $Radiovolume,
@@ -175,6 +178,22 @@ while (true) {
     if ($FUN_active == False AND $FUN == True) {
         $FUN_active = True;
         $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page FUN")));
+        send_message($commmand);
+        $Timestamp = time();
+    }
+	
+	if ($Wheel AND $Wheel_active == False) {
+		$Wheel_active = True;
+        $Cycle = False;
+        $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page WHEEL")));
+        send_message($commmand);
+        $Timestamp = time();
+    }
+	
+	if ($Wheel == False AND $Wheel_active == True) {
+		$Wheel_active = False;
+        $Cycle = True;
+        $commmand = mask(json_encode(array('type' => 'command', 'message' => "!page $Page")));
         send_message($commmand);
         $Timestamp = time();
     }
@@ -253,6 +272,13 @@ while (true) {
                 } elseif ($user_message == "!repeat") {
                     LogNormal("Repeating Page $Page...");
                     $command = mask(json_encode(array('type' => 'command', 'message' => "!page $Page"))); //prepare json data
+                    send_message($command);
+                } elseif ($user_message == "!spin") {
+                    LogNormal("Rolling...");
+					$roll1 = rand(1,20);
+					$roll2 = rand(1,20);
+					$roll3 = rand(1,20);
+                    $command = mask(json_encode(array('type' => 'command', 'message' => "!roll $roll1 $roll2 $roll3"))); //prepare json data
                     send_message($command);
                 } elseif (substr($user_message, 0, 6) == "!video") {
                     $split = explode("!video ", $user_message);

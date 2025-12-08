@@ -24,7 +24,7 @@ if (TRUE !== ldap_bind($ldap_connection, LDAP_USERNAME, LDAP_PASSWORD)) {
 }
 
 
-$ldap_base_dn = 'DC=cbr,DC=de';
+$ldap_base_dn = LDAP_BASE_DN;
 $search_filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=" . $name . "))";
 $result = ldap_search($ldap_connection, $ldap_base_dn, $search_filter);
 if (FALSE !== $result) {
@@ -33,9 +33,17 @@ if (FALSE !== $result) {
         header('Content-Type: image/jpeg');
         echo $entries[0]["thumbnailphoto"][0];
     } else {
-        $file = file_get_contents(DASHBOARD_BASE_URL . '/websocket/nopicture.png');
-        header('Content-type: image/png');
-        echo $file;
+		$search_filter = "(&(objectCategory=person)(objectClass=user)(mail=" . $name . "))";
+		$result = ldap_search($ldap_connection, $ldap_base_dn, $search_filter);
+		$entries = ldap_get_entries($ldap_connection, $result);
+		if ($entries['count'] == 1 && isset($entries[0]["thumbnailphoto"])) {
+		header('Content-Type: image/jpeg');
+		echo $entries[0]["thumbnailphoto"][0];
+	} else {
+		$file = file_get_contents(DASHBOARD_BASE_URL . '/websocket/nopicture.png');
+		header('Content-type: image/png');
+			echo $file;
+		}
     }
 }
 ldap_unbind($ldap_connection); // Clean up after ourselves.

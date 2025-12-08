@@ -1,0 +1,265 @@
+/**
+ * Ausreden-Satzgenerator - Stylesheet
+ * Optimiert für 16:9 Fernseher-Anzeige
+ */
+
+/* Container für die gesamte Komponente */
+.wheel-fortune-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    background: rgb(43, 43, 43);
+    min-height: 100vh;
+}
+
+/* Wrapper für die drei Räder nebeneinander */
+.wheels-wrapper {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    max-width: 95vw;
+    margin-bottom: 3rem;
+    gap: 2vw;
+}
+
+/* Einzelner Rad-Bereich */
+.wheel-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+/* Glücksrad selbst */
+.wheel {
+    width: 28vw;
+    height: 28vw;
+    max-width: 550px;
+    max-height: 550px;
+    position: relative;
+    container-type: inline-size;
+}
+
+/* Innerer Container des Rads (dieser dreht sich) */
+.wheel-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: transparent;
+    overflow: visible;
+    transition: transform ease-in-out;
+    transform-origin: center center;
+    display: grid;
+    place-content: center start;
+    clip-path: inset(0 0 0 0 round 50%);
+}
+
+/* Segmente-Container */
+.wheel-segments {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: contents;
+}
+
+/* Einzelnes Segment - nach dev.to Artikel */
+.wheel-segment {
+    align-content: center;
+    display: grid;
+    font-size: 2cqi;
+    grid-area: 1 / -1;
+    list-style: none;
+    padding-left: 2ch;
+    padding-right: 0.8ch;
+    transform-origin: center right;
+    width: 50cqi;
+    aspect-ratio: 1 / calc(2 * tan(180deg / var(--wheel-items, 20)));
+    clip-path: polygon(0% -2%, 100% 50%, 0% 102%);
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+    line-height: 1.1;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Farben für Segmente */
+.wheel-segment:nth-child(odd) {
+    background: linear-gradient(135deg, rgb(199, 13, 58) 0%, rgb(230, 50, 90) 100%);
+}
+
+.wheel-segment:nth-child(even) {
+    background: linear-gradient(135deg, rgb(70, 72, 75) 0%, rgb(90, 92, 95) 100%);
+}
+
+/* Zeiger/Pointer am Rad - wird außerhalb platziert und dreht NICHT mit */
+.wheel-pointer {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 40px solid rgb(199, 13, 58);
+    z-index: 100;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    pointer-events: none;
+}
+
+/* Mittelpunkt des Rads */
+.wheel-inner::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4vw;
+    height: 4vw;
+    max-width: 90px;
+    max-height: 90px;
+    min-width: 60px;
+    min-height: 60px;
+    background: rgb(49, 51, 53);
+    border-radius: 50%;
+    border: 5px solid rgb(199, 13, 58);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 5;
+}
+
+/* Spinning-Animation - nur für wheel-inner */
+.wheel-inner.spinning {
+    animation: spin-blur 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+@keyframes spin-blur {
+    0% {
+        filter: blur(0px);
+    }
+    50% {
+        filter: blur(4px);
+    }
+    100% {
+        filter: blur(0px);
+    }
+}
+
+/* Label unter dem Rad */
+.wheel-label {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Ergebnis-Container */
+.result-container {
+    width: 100%;
+    max-width: 1400px;
+    margin-top: 2rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ergebnis-Text */
+.result-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    line-height: 1.6;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Ergebnis-Teile mit Farbcodierung */
+.result-part {
+    display: inline;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.result-part-1 {
+    color: rgb(199, 13, 58);
+    font-weight: 900;
+}
+
+.result-part-2 {
+    color: rgb(70, 72, 75);
+    font-weight: 900;
+}
+
+.result-part-3 {
+    color: rgb(199, 13, 58);
+    font-weight: 900;
+}
+
+/* Responsive Anpassungen für 16:9 */
+@media (max-width: 1400px) {
+    .wheel {
+        width: 26vw;
+        height: 26vw;
+    }
+    
+    .result-text {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .wheels-wrapper {
+        flex-direction: column;
+        gap: 3rem;
+    }
+    
+    .wheel {
+        width: 60vw;
+        height: 60vw;
+        max-width: 400px;
+        max-height: 400px;
+    }
+    
+    .result-text {
+        font-size: 1.8rem;
+    }
+}
+
+/* Optimierung für große Displays (16:9 Fernseher) */
+@media (min-width: 1920px) {
+    .wheel {
+        width: 28vw;
+        height: 28vw;
+        max-width: 650px;
+        max-height: 650px;
+    }
+    
+    .wheel-label {
+        font-size: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .result-text {
+        font-size: 2.5rem;
+    }
+    
+    .wheel-segment {
+        font-size: 2.5cqi;
+        padding-left: 2.5ch;
+    }
+}

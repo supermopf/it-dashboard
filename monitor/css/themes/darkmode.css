@@ -1020,3 +1020,7 @@ body{
 .flat-blue.landing-page .app-content-a {
     background-color: #EAEAEA;
 }
+
+.modal-body{
+    background-color: #2b2b2b;
+}

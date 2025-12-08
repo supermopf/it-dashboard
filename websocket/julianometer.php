@@ -3,34 +3,16 @@ require("../config.php");
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
-    if(isset($_POST["Feature"]) && $_POST["Feature"] != ""){
-        $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Features]([FeatureRequest],[State]) VALUES ('".$_POST["Feature"]."','Offen')";
-        if(sqlsrv_query($conn, $sql)){
+    if(isset($_POST["user"]) && $_POST["user"] != ""){
+       $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Julianometer]([Description],[User],[Timestamp]) VALUES ('".$_POST["description"]."','".$_POST["user"]."',GETDATE())";
+	   if(sqlsrv_query($conn, $sql)){
+			echo "OK";
         }else {
             echo "<pre>";
             die(print_r(sqlsrv_errors(), true));
         }
     }
-    if(isset($_POST["action"]) && isset($_POST["ID"])){
-        switch ($_POST['action']){
-            case 'close':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'Abgeschlossen' WHERE [ID] = ".$_POST['ID'];
-                break;
-            case 'inprogress':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'In Bearbeitung' WHERE [ID] = ".$_POST['ID'];
-                break;
-            case 'abort':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'Abgebrochen' WHERE [ID] = ".$_POST['ID'];
-                break;
-        }
-        if(sqlsrv_query($conn, $sql)){
-        }else {
-            echo "<pre>";
-            die(print_r(sqlsrv_errors(), true));
-        }
-        die();
-    }
-    if ($result = sqlsrv_query($conn, "SELECT *  FROM [IT-Dashboard].[dbo].[IT-Dashboard_Features] ORDER BY [ID] DESC")) {
+    if ($result = sqlsrv_query($conn, "SELECT *  FROM [IT-Dashboard].[dbo].[IT-Dashboard_Julianometer] ORDER BY [ID] DESC")) {
         $features = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
             array_push($features, $row);
@@ -86,8 +68,8 @@ if ($conn) {
                         <li><a href="./best.php">Best</a></li>
                         <li><a href="./youtube.php">YouTube</a></li>
                         <li><a href="./index.php">Adminpanel</a></li>
-                        <li class="active"><a href="./features.php">Feature Request</a></li>
-                        <li><a href="./julianometer.php">Julian-O-Meter</a></li>
+                        <li><a href="./features.php">Feature Request</a></li>
+                        <li class="active"><a href="./julianometer.php">Julian-O-Meter</a></li>
                         <li><a href="./newtoast.php">Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
@@ -103,18 +85,21 @@ if ($conn) {
     </div>
     <div class="row" style="margin-top: 5%;">
         <div class="col-lg-10 col-lg-offset-1">
-            <button id="opennew" class="btn btn-primary">Neues Feature</button>
+            <button id="opennew" class="btn btn-primary">Neue Buchung</button>
             <!-- Modal -->
             <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <h4 class="modal-title" id="myModalLabel">Neues Feature</h4>
+                            <h4 class="modal-title" id="myModalLabel">Neue Buchung</h4>
                         </div>
                         <div class="modal-body">
+						    <div class="form-group">
+								<input class="form-control" type="text" id="user" placeholder="Wer hat das Kontingent verbaucht?"/>
+                            </div>
                             <div class="form-group">
-                                <textarea class="form-control" rows="5" id="featuretext" placeholder="Beschreibe bitte deinen Wunsch..."></textarea>
+                                <textarea class="form-control" rows="5" id="description" placeholder="Wieso wurde das Kontingent verbaucht?"></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -131,33 +116,19 @@ if ($conn) {
             <table class="table table-bordered table-hover table-striped">
                 <thead>
                 <tr>
-                    <th style="width: 10%">ID</th>
-                    <th>Feature</th>
-                    <th style="width: 10%">Status</th>
-                    <th style="width: 25%">Aktion</th>
+                    <th style="width: 10%">Datum</th>
+                    <th>Grund</th>
+                    <th style="width: 10%">Verbraucher</th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php
                     foreach ($features as $feature) {
+						$newDate = $feature["Timestamp"]->format('d.m.Y');
                         echo "<tr>";
-                            echo "<td>".$feature["ID"]."</td>";
-                            echo "<td>".$feature["FeatureRequest"]."</td>";
-                            echo "<td>".$feature["State"]."</td>";
-                            echo "<td>";
-                            if($feature["State"] == "Offen"){
-                                echo "<div class='btn-group'  role='group'>";
-                                    echo "<button class='btn btn-danger abortrequest' data-id='".$feature["ID"]."'>Abbrechen</button>";
-                                    echo "<button class='btn btn-primary inprogress' data-id='".$feature["ID"]."'>Bearbeitung</button>";
-                                echo "</div>";
-                            }
-                            if($feature["State"] == "In Bearbeitung"){
-                                echo "<div class='btn-group'  role='group'>";
-                                echo "<button class='btn btn-danger abortrequest' data-id='".$feature["ID"]."'>Abbrechen</button>";
-                                echo "<button class='btn btn-success closerequest' data-id='".$feature["ID"]."'>Abschließen</button>";
-                                echo "</div>";
-                            }
-                            echo "</td>";
+                            echo "<td>".$newDate."</td>";
+                            echo "<td>".$feature["Description"]."</td>";
+                            echo "<td>".$feature["User"]."</td>";
                         echo "</tr>";
                     }
                 ?>
@@ -194,55 +165,11 @@ if ($conn) {
     $("#newfeature").click(function() {
         $("#feature").submit();
         json = {
-            Feature: $('#featuretext').val()
+            user: $('#user').val(),
+			description: $('#description').val()
         };
         $.ajax({
-            url: 'features.php',
-            type: 'post',
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (data) {
-                location.reload();
-            },
-            data: json
-        });
-    });
-    $(".closerequest").click(function() {
-        json = {
-            action: ('close'),
-            ID: $(this).attr('data-id')
-        };
-        $.ajax({
-            url: 'features.php',
-            type: 'post',
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (data) {
-                location.reload();
-            },
-            data: json
-        });
-    });
-    $(".inprogress").click(function() {
-        json = {
-            action: ('inprogress'),
-            ID: $(this).attr('data-id')
-        };
-        $.ajax({
-            url: 'features.php',
-            type: 'post',
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (data) {
-                location.reload();
-            },
-            data: json
-        });
-    });
-    $(".abortrequest").click(function() {
-        json = {
-            action: ('abort'),
-            ID: $(this).attr('data-id')
-        };
-        $.ajax({
-            url: 'features.php',
+            url: 'julianometer.php',
             type: 'post',
             contentType: 'application/x-www-form-urlencoded',
             success: function (data) {
