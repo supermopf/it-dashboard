@@ -1,0 +1,64 @@
+html, body {
+    height: 100%;
+}
+
+.row {
+    margin-top: 15px;
+}
+
+.icon {
+    padding: 5px;
+}
+
+.btn-xl {
+    padding: 50px 20px;
+    font-size: 20px;
+    border-radius: 10px;
+}
+
+.fill-height {
+    min-height: 100%;
+    height: auto !important; /* cross-browser */
+    height: 100%; /* cross-browser */
+}
+
+.schwifty {
+    min-height: 300px;
+}
+
+.flip {
+    -moz-transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    transform: scaleX(-1);
+    filter: FlipH;
+    -ms-filter: "FlipH";
+}
+
+#stopdiv {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+#stop {
+    height: 200px;
+}
+
+#busdiv {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: -20%;
+}
+
+#bus {
+    position: absolute;
+    left: 0%;
+    bottom: 0;
+    transition-duration: 1s;
+    transition-delay: 0s;
+    transition-property: width;
+    transition-timing-function: linear;
+    height: 61px;
+}
