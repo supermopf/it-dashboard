@@ -38,6 +38,12 @@ define("APIKEY_openweathermap", '');
 
 define("DEFAULT_RADIOSTATION", '');
 
+//Microsoft 365 Service Health API (Azure AD App Registration)
+define("M365_TENANT_ID", ''); // Your Azure AD Tenant ID
+define("M365_CLIENT_ID", ''); // Azure AD App Client ID
+define("M365_CLIENT_SECRET", ''); // Azure AD App Client Secret
+define("M365_SERVICES", 'Exchange,SharePoint,MicrosoftTeams,skypeforbusiness,OneDriveForBusiness,AzureActiveDirectory,DynamicsCRM,MicrosoftIntune,PowerBIcom,Planner,Yammer,Forms'); // Comma-separated list of services to monitor
+
 //Domain Configuration
 define("LDAP_DOMAIN", '');
 define("DASHBOARD_DOMAIN", '');

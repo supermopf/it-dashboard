@@ -115,10 +115,7 @@ if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; r
                         </li>
                         <li>
                             <a href="javascript:ButtonPage(7);">
-                                <i class="icon fas fa-code-branch"></i><span class="title">
-                                    🚍4🥚
-
-                                </span>
+                                <i class="icon fas fa-code-branch"></i><span class="title">M365</span>
                             </a>
                         </li>
                         <li>
