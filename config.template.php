@@ -20,6 +20,7 @@ define("Sec_Color_Border", 'rgba(62, 150, 81,1)');
 //For Active Direcory
 define("LDAP_USERNAME", '');
 define("LDAP_PASSWORD", '');
+define("LDAP_BASE_DN", '');
 
 define("DASHBOARD_SQL_INSTANCE", '');
 define("DASHBOARD_SQL_DATABASE", '');
