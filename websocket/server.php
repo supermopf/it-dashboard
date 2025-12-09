@@ -1,5 +1,7 @@
 <?php
 include(__DIR__ .'/../config.php');
+require_once(__DIR__ . '/db_helper.php');
+
 $host = DASHBOARD_DOMAIN; //host
 $port = '9000'; //port
 $null = NULL; //null var
@@ -388,8 +390,14 @@ while (true) {
                     $json = json_encode($obj);
                     if (isset($obj->ToastHistory) && $obj->ToastHistory == "false") {
                         //Do not save
-                    }else{
-                        $myfile = file_put_contents('C:/scripts/IT-Dashboard/logs.txt', $json . PHP_EOL, FILE_APPEND | LOCK_EX);
+                    } else {
+                        // Save to database (modern approach)
+                        try {
+                            $db = new ToastDB();
+                            $db->addHistory((array)$obj);
+                        } catch (Exception $e) {
+                            LogDebug("Failed to save toast to database: " . $e->getMessage(), 1);
+                        }
                     }
                     $response_text = mask(json_encode(array('type' => 'command', 'message' => '!urgent ' . $json)));
                     send_message($response_text); //send data
