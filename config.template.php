@@ -37,6 +37,7 @@ define("SCCM_SQL_DATABASE", '');
 define("APIKEY_openweathermap", '');
 
 define("DEFAULT_RADIOSTATION", '');
+define("DEFAULT_RADIOSTATION_ICON", '');
 
 //Microsoft 365 Service Health API (Azure AD App Registration)
 define("M365_TENANT_ID", ''); // Your Azure AD Tenant ID
