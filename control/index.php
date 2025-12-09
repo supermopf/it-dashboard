@@ -57,7 +57,7 @@
             </button>
         </div>
         <div class="col-sm-3">
-            <button id="page7" class="btn btn-xl btn-block"><i class="icon fas fa-bus"></i><span class="title">Bus4i</span>
+            <button id="page7" class="btn btn-xl btn-block"><i class="icon fas fa-code-branch"></i><span class="title">M365</span>
             </button>
         </div>
         <div class="col-sm-3">

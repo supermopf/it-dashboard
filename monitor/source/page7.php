@@ -96,69 +96,39 @@ foreach ($issues as $issue) {
 <?php if (!empty($issues_by_service)): ?>
 <div class="row">
     <div class="col-lg-12">
-        <div class="panel panel-warning">
-            <div class="panel-heading">
-                <i class="fa fa-exclamation-circle"></i> Aktuelle Vorfälle und Beeinträchtigungen
-            </div>
-            <div class="panel-body">
-                <?php foreach ($issues_by_service as $service_id => $service_issues): ?>
-                    <?php 
-                        $service_name = getServiceDisplayName($service_id);
-                    ?>
-                    <h4 class="service-issue-header">
-                        <i class="fa fa-cube"></i> <?php echo htmlspecialchars($service_name); ?>
-                    </h4>
-                    
-                    <?php foreach ($service_issues as $issue): ?>
-                        <?php
-                            $issue_class = 'panel-default';
-                            if (stripos($issue['classification'], 'Incident') !== false) {
-                                $issue_class = 'panel-danger';
-                            } elseif (stripos($issue['classification'], 'Advisory') !== false) {
-                                $issue_class = 'panel-warning';
-                            }
-                            
-                            $start_date = new DateTime($issue['startDateTime']);
-                            $last_update = new DateTime($issue['lastModifiedDateTime']);
-                        ?>
-                        <div class="panel <?php echo $issue_class; ?> m365-issue-panel">
-                            <div class="panel-heading">
-                                <strong><?php echo htmlspecialchars($issue['title']); ?></strong>
-                                <span class="pull-right">
-                                    <span class="label label-default"><?php echo htmlspecialchars($issue['classification']); ?></span>
-                                </span>
-                            </div>
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <p class="issue-description">
-                                            <?php 
-                                                // Get the latest post
-                                                if (!empty($issue['posts']) && is_array($issue['posts'])) {
-                                                    $latest_post = end($issue['posts']);
-                                                    echo nl2br(htmlspecialchars($latest_post['description']['content'] ?? 'Keine Details verfügbar'));
-                                                }
-                                            ?>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="issue-meta">
-                                            <p><strong>ID:</strong> <?php echo htmlspecialchars($issue['id']); ?></p>
-                                            <p><strong>Status:</strong> <?php echo getStatusText($issue['status']); ?></p>
-                                            <p><strong>Beginn:</strong> <?php echo $start_date->format('d.m.Y H:i'); ?> Uhr</p>
-                                            <p><strong>Letztes Update:</strong> <?php echo $last_update->format('d.m.Y H:i'); ?> Uhr</p>
-                                            <?php if (!empty($issue['feature'])): ?>
-                                                <p><strong>Betroffenes Feature:</strong> <?php echo htmlspecialchars($issue['feature']); ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    
+        <div class="issues-section-header">
+            <i class="fa fa-exclamation-circle"></i> Aktuelle Vorfälle und Beeinträchtigungen
+        </div>
+        <div class="issues-compact-grid">
+            <?php foreach ($issues_by_service as $service_id => $service_issues): ?>
+                <?php 
+                    $service_name = getServiceDisplayName($service_id);
+                    foreach ($service_issues as $issue):
+                        $issue_class = 'issue-default';
+                        if (stripos($issue['classification'], 'Incident') !== false) {
+                            $issue_class = 'issue-danger';
+                        } elseif (stripos($issue['classification'], 'Advisory') !== false) {
+                            $issue_class = 'issue-warning';
+                        }
+                        
+                        $start_date = new DateTime($issue['startDateTime']);
+                        $last_update = new DateTime($issue['lastModifiedDateTime']);
+                ?>
+                <div class="issue-compact-card <?php echo $issue_class; ?>">
+                    <div class="issue-compact-header">
+                        <span class="issue-service-name"><?php echo htmlspecialchars($service_name); ?></span>
+                        <span class="issue-classification"><?php echo htmlspecialchars($issue['classification']); ?></span>
+                    </div>
+                    <div class="issue-compact-title">
+                        <?php echo htmlspecialchars($issue['title']); ?>
+                    </div>
+                    <div class="issue-compact-meta">
+                        <span><i class="fa fa-clock-o"></i> <?php echo $start_date->format('d.m.Y H:i'); ?></span>
+                        <span class="issue-status"><?php echo getStatusText($issue['status']); ?></span>
+                    </div>
+                </div>
                 <?php endforeach; ?>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </div>
@@ -237,26 +207,26 @@ foreach ($issues as $issue) {
 
 /* Success - Green accent */
 .panel-success.m365-service-panel {
-    border-left: 3px solid #5cb85c !important;
+    border-left: 3px solid #2ECC71 !important;
 }
 .panel-success.m365-service-panel .panel-heading {
-    color: #5cb85c !important;
+    color: #2ECC71 !important;
 }
 
 /* Warning - Orange accent */
 .panel-warning.m365-service-panel {
-    border-left: 3px solid #f0ad4e !important;
+    border-left: 3px solid #F1C40F !important;
 }
 .panel-warning.m365-service-panel .panel-heading {
-    color: #f0ad4e !important;
+    color: #F1C40F !important;
 }
 
 /* Danger - Red accent */
 .panel-danger.m365-service-panel {
-    border-left: 3px solid #d9534f !important;
+    border-left: 3px solid #E74C3C !important;
 }
 .panel-danger.m365-service-panel .panel-heading {
-    color: #d9534f !important;
+    color: #E74C3C !important;
 }
 
 /* Default - Blue accent */
@@ -319,6 +289,109 @@ foreach ($issues as $issue) {
     display: inline-block;
     width: 120px;
     color: #ffffff !important;
+}
+
+/* Compact Issues Grid - TV optimized */
+.issues-section-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff !important;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.issues-section-header i {
+    color: #F1C40F;
+    margin-right: 8px;
+}
+
+.issues-compact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+}
+
+.issue-compact-card {
+    background-color: rgba(40, 40, 40, 0.95) !important;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 10px;
+    transition: all 0.2s ease;
+}
+
+.issue-compact-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.issue-danger {
+    border-left: 3px solid #E74C3C !important;
+}
+
+.issue-warning {
+    border-left: 3px solid #F1C40F !important;
+}
+
+.issue-default {
+    border-left: 3px solid #3498DB !important;
+}
+
+.issue-compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.issue-service-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.issue-classification {
+    font-size: 9px;
+    padding: 2px 6px;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.issue-compact-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e0e0e0 !important;
+    margin-bottom: 6px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.issue-compact-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #b0b0b0 !important;
+}
+
+.issue-compact-meta i {
+    margin-right: 4px;
+}
+
+.issue-status {
+    padding: 2px 6px;
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    font-weight: 600;
 }
 
 /* Badge styling */
