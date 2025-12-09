@@ -1,16 +1,24 @@
+<?php
+require_once('db_helper.php');
+$db = new ToastDB();
+
+// Pagination
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$perPage = 50; // Load only 50 at a time instead of all
+$offset = ($page - 1) * $perPage;
+
+$youtubeHistory = $db->getYouTubeHistory($perPage, $offset);
+$totalCount = $db->getYouTubeCount();
+$totalPages = ceil($totalCount / $perPage);
+?>
 <!DOCTYPE html>
 <html xmlns="">
 <head>
-    <title>IT Dashboard</title>
+    <title>IT Dashboard - YouTube</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Fonts -->
     <link href='https://fonts.googleapis.com/css?family=Roboto+Condensed:300,400' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
-    <!-- CSS Libs -->
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/animate.min.css">
-    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-switch.min.css">
-    <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-slider.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" type="text/css" href="./css/style.css">
@@ -21,7 +29,7 @@
         <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -36,7 +44,7 @@
                         <li class="active"><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
                         <li><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
                         <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
-						<li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
+                        <li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
                         <li><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
@@ -46,14 +54,10 @@
                                 <span id="ws-status-text" style="color: #e74c3c;">Nicht verbunden</span>
                             </p>
                         </li>
-                        <li>
-                            <p class="navbar-btn">
-                                <button class="btn btn-default" id="reload">Reload</button>
-                            </p>
-                        </li>
+                        <li><p class="navbar-btn"><button class="btn btn-default" id="reload">Reload</button></p></li>
                     </ul>
-                </div><!--/.nav-collapse -->
-            </div><!--/.container-fluid -->
+                </div>
+            </div>
         </nav>
     </div>
     
@@ -89,72 +93,95 @@
     <!-- YouTube History Table -->
     <div class="row">
         <div class="col-lg-offset-1 col-lg-10">
+            <div class="alert alert-info">
+                Zeige <?= count($youtubeHistory) ?> von <?= $totalCount ?> Einträgen (Seite <?= $page ?> von <?= $totalPages ?>)
+            </div>
+            
+            <!-- Pagination Top -->
+            <?php if ($totalPages > 1): ?>
+            <nav>
+                <ul class="pagination">
+                    <?php if ($page > 1): ?>
+                    <li><a href="?page=<?= $page-1 ?>">&laquo; Zurück</a></li>
+                    <?php endif; ?>
+                    
+                    <?php for ($i = max(1, $page-5); $i <= min($totalPages, $page+5); $i++): ?>
+                    <li class="<?= $i == $page ? 'active' : '' ?>">
+                        <a href="?page=<?= $i ?>"><?= $i ?></a>
+                    </li>
+                    <?php endfor; ?>
+                    
+                    <?php if ($page < $totalPages): ?>
+                    <li><a href="?page=<?= $page+1 ?>">Weiter &raquo;</a></li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+            <?php endif; ?>
+            
             <div class="panel panel-info">
                 <div class="panel-heading">
-                    <i class="fab fa-youtube"></i> YouTube History
+                    <i class="fab fa-youtube"></i> YouTube History (<?= count($youtubeHistory) ?> Videos)
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-hover" style="margin-bottom: 0; table-layout: fixed;">
                         <thead>
-                        <tr>
-                            <th style="width: 120px;">Thumbnail</th>
-                            <th style="word-wrap: break-word; overflow-wrap: break-word;">URL</th>
-                            <th style="width: 120px;">Aktion</th>
-                        </tr>
+                            <tr>
+                                <th style="width: 120px;">Thumbnail</th>
+                                <th style="word-wrap: break-word; overflow-wrap: break-word;">URL</th>
+                                <th style="width: 120px;">Aktion</th>
+                            </tr>
                         </thead>
                         <tbody>
-                <?php
-                $history = array_unique(array_reverse(file('C:/scripts/IT-Dashboard/ytlog.txt')));
-                foreach ($history as $line) {
-                    // Extract video ID from different YouTube URL formats
-                    $videoID = null;
-                    
-                    // 1. Check for YouTube Shorts format: https://www.youtube.com/shorts/VIDEO_ID
-                    if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i', $line, $matches)) {
-                        $videoID = $matches[1];
-                    }
-                    // 2. Check for standard format (watch?v=VIDEO_ID)
-                    else {
-                        parse_str(parse_url($line, PHP_URL_QUERY), $yturl);
-                        if (isset($yturl['v'])) {
-                            // Remove any trailing underscores or whitespace from video ID
-                            $videoID = trim($yturl['v'], "_ \t\n\r\0\x0B");
-                        }
-                        // 3. Check for short URL format youtu.be/VIDEO_ID
-                        else {
-                            $path = parse_url($line, PHP_URL_PATH);
-                            $potential_id = trim($path, '/');
-                            if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $potential_id)) {
-                                $videoID = $potential_id;
-                            }
-                        }
-                    }
-                    
-                    echo "<tr>";
-                    echo "<td>";
-                    if ($videoID) {
-                        echo "<a href='" . trim($line) . "'><img class='img-responsive' src='https://i.ytimg.com/vi/" . $videoID . "/hqdefault.jpg' /></a>";
-                    } else {
-                        echo "<a href='" . trim($line) . "'><img class='img-responsive' src='https://via.placeholder.com/120x90?text=No+Preview' /></a>";
-                    }
-                    echo "</td>";
-                    echo "<td style='word-wrap: break-word; overflow-wrap: break-word;'>";
-                    echo trim($line);
-                    echo "</td>";
-                    echo "<td>";
-                        echo "<div class=\"btn-group\"><button yturl='".trim($line)."' class=\"btn btn-primary repeat\">Wiederholen</button></div>";
-                    echo "</td>";
-                    echo "</tr>";
-                }
-                ?>
-                </tbody>
-            </table>
-        </div>
+                        <?php foreach ($youtubeHistory as $video): ?>
+                            <tr>
+                                <td>
+                                    <?php if ($video->video_id): ?>
+                                        <a href="<?= htmlspecialchars($video->url) ?>" target="_blank">
+                                            <img class='img-responsive' src='https://i.ytimg.com/vi/<?= htmlspecialchars($video->video_id) ?>/hqdefault.jpg' alt="Thumbnail" />
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="<?= htmlspecialchars($video->url) ?>" target="_blank">
+                                            <div style="width:120px;height:90px;background:#333;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;">No Preview</div>
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                                <td style='word-wrap: break-word; overflow-wrap: break-word;'>
+                                    <?= htmlspecialchars($video->url) ?>
+                                </td>
+                                <td>
+                                    <button yturl='<?= htmlspecialchars($video->url) ?>' class="btn btn-primary repeat">Wiederholen</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            
+            <!-- Pagination Bottom -->
+            <?php if ($totalPages > 1): ?>
+            <nav>
+                <ul class="pagination">
+                    <?php if ($page > 1): ?>
+                    <li><a href="?page=<?= $page-1 ?>">&laquo; Zurück</a></li>
+                    <?php endif; ?>
+                    
+                    <?php for ($i = max(1, $page-5); $i <= min($totalPages, $page+5); $i++): ?>
+                    <li class="<?= $i == $page ? 'active' : '' ?>">
+                        <a href="?page=<?= $i ?>"><?= $i ?></a>
+                    </li>
+                    <?php endfor; ?>
+                    
+                    <?php if ($page < $totalPages): ?>
+                    <li><a href="?page=<?= $page+1 ?>">Weiter &raquo;</a></li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+            <?php endif; ?>
         </div>
     </div>
 </div>
-</body>
+
 <script src="../monitor/lib/js/jquery.min.js"></script>
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
 <script type="text/javascript" src="../config.js.php"></script>
@@ -175,42 +202,23 @@
         }
     }
     
-    function clean(obj) {
-        var propNames = Object.getOwnPropertyNames(obj);
-        for (var i = 0; i < propNames.length; i++) {
-            var propName = propNames[i];
-            if (obj[propName] === null || obj[propName] === undefined || obj[propName] === "") {
-                delete obj[propName];
-            }
-        }
-    }
     $('#reload').click(function () {
-        var id = $(this).attr('id');
-        var json = {
-            ToastSubject: ($('#ToastSubject' + id).html()),
-            ToastBody: ("\<script\>location.reload\(\)\<\/script\>"),
-            ToastHistory: ("false")
-        };
-        clean(json);
         $.ajax({
             url: 'api.php',
             type: 'post',
-            contentType: 'application/x-www-form-urlencoded',
-            success: function (data) {
-                //nothing
-                console.log(JSON.stringify(json));
-            },
-            data: json
+            data: {
+                ToastBody: "<script>location.reload()<\/script>",
+                ToastHistory: "false"
+            }
         });
     });
-    $('#yt-btn').click(function () { //use clicks message send button
-        var mymessage = $('#yt-message').val(); //get message text
+    
+    $('#yt-btn').click(function () {
+        var mymessage = $('#yt-message').val();
         $('#yt-message').val("");
-        //prepare json data
         var msg = {
             message: '!video ' + mymessage
         };
-        //convert and send data to server
         websocket.send(JSON.stringify(msg));
     });
 
@@ -228,11 +236,11 @@
         $('#volume').on("slideStart", function (sliderValue) {
             sliding = true;
         });
-        //create a new WebSocket object.
+        
         var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
         websocket = new WebSocket(wsUri);
 
-        websocket.onopen = function (ev) { // connection is open
+        websocket.onopen = function (ev) {
             updateWSStatus(true);
             msg = {
                 message: '!reg [YouTube]'
@@ -247,6 +255,7 @@
         websocket.onclose = function (ev) {
             updateWSStatus(false);
         };
+        
         $('.repeat').click(function () {
             yturl = $(this).attr('yturl');
             var msg = {
@@ -255,12 +264,10 @@
             websocket.send(JSON.stringify(msg));
         });
 
-
-        //#### Message received from server?
         websocket.onmessage = function (ev) {
-            var msg = JSON.parse(ev.data); //PHP sends Json data
-            var type = msg.type; //message type
-            var message = msg.message; //message text
+            var msg = JSON.parse(ev.data);
+            var type = msg.type;
+            var message = msg.message;
 
             if (type === 'auth') {
                 msg = {
@@ -276,3 +283,5 @@
         };
     });
 </script>
+</body>
+</html>

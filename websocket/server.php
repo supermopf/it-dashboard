@@ -337,8 +337,15 @@ while (true) {
                     send_message($command);
                 } elseif (substr($user_message, 0, 6) == "!video") {
                     $split = explode("!video ", $user_message);
-                    $url = $split[1];
-                    $myfile = file_put_contents('C:/scripts/IT-Dashboard/ytlog.txt', $url . PHP_EOL, FILE_APPEND | LOCK_EX);
+                    $url = trim($split[1]);
+                    
+                    // Save to database
+                    try {
+                        $db = new ToastDB();
+                        $db->addYouTubeHistory($url);
+                    } catch (Exception $e) {
+                        LogDebug("Failed to save YouTube URL to database: " . $e->getMessage(), 1);
+                    }
 
                     $response_text = mask(json_encode(array('type' => 'command', 'message' => $user_message)));
                     send_message($response_text);

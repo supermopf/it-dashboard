@@ -122,4 +122,86 @@ class ToastDB {
         
         return $stmt->fetchAll();
     }
+    
+    /**
+     * Add YouTube URL to history
+     */
+    public function addYouTubeHistory($url) {
+        // Check if URL already exists
+        $stmt = $this->db->prepare("SELECT id FROM youtube_history WHERE url = :url");
+        $stmt->execute([':url' => $url]);
+        
+        if ($existing = $stmt->fetch()) {
+            // URL exists - update timestamp to move it to top
+            $updateStmt = $this->db->prepare("
+                UPDATE youtube_history 
+                SET created_at = CURRENT_TIMESTAMP 
+                WHERE id = :id
+            ");
+            return $updateStmt->execute([':id' => $existing->id]);
+        }
+        
+        // New URL - insert it
+        $stmt = $this->db->prepare("
+            INSERT INTO youtube_history (url, video_id)
+            VALUES (:url, :video_id)
+        ");
+        
+        // Extract video ID
+        $videoId = $this->extractYouTubeVideoId($url);
+        
+        return $stmt->execute([
+            ':url' => $url,
+            ':video_id' => $videoId
+        ]);
+    }
+    
+    /**
+     * Get YouTube history with pagination
+     */
+    public function getYouTubeHistory($limit = 100, $offset = 0) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM youtube_history 
+            ORDER BY created_at DESC 
+            LIMIT :limit OFFSET :offset
+        ");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Get total YouTube history count
+     */
+    public function getYouTubeCount() {
+        $stmt = $this->db->query("SELECT COUNT(*) as count FROM youtube_history");
+        return $stmt->fetch()->count;
+    }
+    
+    /**
+     * Extract YouTube video ID from various URL formats
+     */
+    private function extractYouTubeVideoId($url) {
+        // YouTube Shorts format: https://www.youtube.com/shorts/VIDEO_ID
+        if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i', $url, $matches)) {
+            return $matches[1];
+        }
+        
+        // Standard format: watch?v=VIDEO_ID
+        parse_str(parse_url($url, PHP_URL_QUERY), $params);
+        if (isset($params['v'])) {
+            return trim($params['v'], "_ \t\n\r\0\x0B");
+        }
+        
+        // Short URL format: youtu.be/VIDEO_ID
+        $path = parse_url($url, PHP_URL_PATH);
+        $potentialId = trim($path, '/');
+        if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $potentialId)) {
+            return $potentialId;
+        }
+        
+        return null;
+    }
 }
