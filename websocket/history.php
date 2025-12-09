@@ -13,10 +13,9 @@
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/checkbox3.min.css">
     <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <link rel="stylesheet" type="text/css" href="./css/style.css">
     <style>
-        .row {
-            margin-top: 25px;
-        }
         table {
             table-layout:fixed;
             width:100%;
@@ -35,17 +34,17 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#">IT-Dashboard</a>
+                    <a class="navbar-brand" href="#"><i class="fas fa-tachometer-alt"></i> IT-Dashboard</a>
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="./history.php">History</a></li>
-                        <li><a href="./best.php">Best</a></li>
-                        <li><a href="./youtube.php">YouTube</a></li>
-                        <li><a href="./index.php">Adminpanel</a></li>
-                        <li><a href="./features.php">Feature Request</a></li>
-						<li><a href="./julianometer.php">Julian-O-Meter</a></li>
-                        <li><a href="./newtoast.php">Neuer Toast</a></li>
+                        <li class="active"><a href="./history.php"><i class="fas fa-history"></i> History</a></li>
+                        <li><a href="./best.php"><i class="fas fa-star"></i> Best</a></li>
+                        <li><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
+                        <li><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
+                        <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
+						<li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
+                        <li><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
                         <li>
