@@ -49,6 +49,26 @@ iframe{
     padding: 0;
 }
 
+/* Page Status Indicators */
+#navigation li.page-warning {
+    /* Pages with data - display normally, no special indicator */
+    position: relative;
+}
+
+#navigation li.page-ok {
+    /* Pages without data - grayed out but still clickable */
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+#navigation li.page-ok a {
+    color: #444 !important;
+}
+
+#navigation li.page-ok .icon {
+    opacity: 0.3;
+}
+
 .state-0 {
     background-color: #fff;
 }

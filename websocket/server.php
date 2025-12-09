@@ -39,6 +39,8 @@ $Radiovolume = 0.05;
 $YTvolume = 0.5;
 $ForwardedIP = "";
 $SongTitle = "";
+$PageStatusCache = LoadPageStatus();
+$LastPageStatusLoad = time();
 
 define("Debug", True);
 /*
@@ -72,6 +74,28 @@ function LogDebug($message, $LogLevel = 3)
 function LogNormal($message)
 {
     echo date("Y-m-d H:i") . " " . $message . PHP_EOL;
+}
+
+function LoadPageStatus() {
+    $statusFile = __DIR__ . '/../monitor/cache/page_status.json';
+    if (file_exists($statusFile)) {
+        $json = file_get_contents($statusFile);
+        $status = json_decode($json, true);
+        return $status ? $status : array();
+    }
+    return array();
+}
+
+function PageHasData($pageNumber, $pageStatusCache) {
+    // Use cached status from rendercache.php
+    // For monitoring pages: hasData = true means alerts exist (bad, don't skip)
+    // hasData = false means no alerts (good, but we skip empty pages)
+    if (isset($pageStatusCache[$pageNumber]) && isset($pageStatusCache[$pageNumber]['hasData'])) {
+        // Return true if page has alerts (show it) or false if empty (skip it)
+        return $pageStatusCache[$pageNumber]['hasData'];
+    }
+    // Default: assume page should be shown if not in cache
+    return true;
 }
 
 
@@ -110,6 +134,13 @@ while (true) {
 
     //Cycle thoose pages
     if ($Timestamp <= strtotime('-' . $CycleTime . ' Seconds') AND $Cycle == True) {
+        // Reload page status every 60 seconds
+        if ($LastPageStatusLoad <= strtotime('-60 Seconds')) {
+            $PageStatusCache = LoadPageStatus();
+            $LastPageStatusLoad = time();
+            LogDebug("Page status cache reloaded", 2);
+        }
+        
         $random = rand(1, 99);
         if ($random == 88) {
             $now = new DateTime();
@@ -138,6 +169,19 @@ while (true) {
 			} else {
 				$Page++;
 			}
+			
+			// Skip pages without data
+			$maxAttempts = 10; // Prevent infinite loop
+			$attempts = 0;
+			while (!PageHasData($Page, $PageStatusCache) && $attempts < $maxAttempts) {
+				LogNormal("Skipping empty page $Page");
+				$Page++;
+				if ($Page > 10) {
+					$Page = 1;
+				}
+				$attempts++;
+			}
+			
 			$commmand = mask(json_encode(array('type' => 'command', 'message' => "!page $Page"))); //prepare json data
 			send_message($commmand); //notify all users about new connection
 			$FUN_active = False;
@@ -147,6 +191,14 @@ while (true) {
     //Send update
     if ($lasttimestamp <= strtotime("-1 second")) {
         $lasttimestamp = strtotime("now");
+        
+        // Prepare page status for client
+        $pageStatusForClient = array();
+        foreach ($PageStatusCache as $pageNum => $status) {
+            // hasData = true means alerts exist (warning), false means no alerts (ok)
+            $pageStatusForClient[$pageNum] = $status['hasData'] ? 'warning' : 'ok';
+        }
+        
         $var_array = array(
             "type" => "update",
             "Page" => $Page,
@@ -162,7 +214,8 @@ while (true) {
             "CD" => $Timestamp - strtotime('-' . ($CycleTime - 1) . ' Seconds'),
             "Cycle" => $Cycle ? 'true' : 'false',
             "SongTitle" => $SongTitle,
-            "RadioStationIcon" => $RadioStationIcon
+            "RadioStationIcon" => $RadioStationIcon,
+            "PageStatus" => $pageStatusForClient
         );
         $update = mask(json_encode($var_array));
         send_message($update);

@@ -449,6 +449,24 @@ $(document).ready(function () {
             } else {
                 $("#page-timer").html("Deaktiviert");
             }
+            
+            // Update page status indicators
+            if (msg.PageStatus) {
+                for (var pageNum in msg.PageStatus) {
+                    var status = msg.PageStatus[pageNum];
+                    var $navItem = $("#navigation li:nth-child(" + pageNum + ")");
+                    
+                    // Remove existing status classes
+                    $navItem.removeClass('page-warning page-ok');
+                    
+                    // Add appropriate class
+                    if (status === 'warning') {
+                        $navItem.addClass('page-warning');
+                    } else if (status === 'ok') {
+                        $navItem.addClass('page-ok');
+                    }
+                }
+            }
         }
         if (type === 'console') {
             console.log(message);
