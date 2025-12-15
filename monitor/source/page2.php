@@ -223,21 +223,46 @@ order by referencenumber desc
 
 <?php
 
+// Ermittle maximale Stunde aus den tatsächlichen Daten
+$maxHour = 0;
+foreach ($TicketChart as $team => $data) {
+    if (!empty($data)) {
+        $teamMaxHour = max(array_keys($data));
+        if ($teamMaxHour > $maxHour) {
+            $maxHour = $teamMaxHour;
+        }
+    }
+}
+
 $ChartLabels = array();
-for($i = 0; $i <= 24; $i++){
+for($i = 0; $i <= $maxHour; $i++){
     $time = strtotime($i . ':00:00');
     array_push($ChartLabels, date("G:i",$time));
 }
 
-$ChartDatasets = array();
-foreach ($TicketChart as $team => $data) {
-    $ChartDatasets[$team] = array();
+// Initialisiere alle Teams mit leeren Arrays
+$ChartDatasets = array(
+    'ITSM Service Desk' => array(),
+    'Workplace Service 2nd Level' => array(),
+    'Infrastructure 2nd Level' => array(),
+    'Infrastructure 3rd Level' => array()
+);
 
-    for($i = 0; $i <= 24; $i++){
+foreach ($TicketChart as $team => $data) {
+    for($i = 0; $i <= $maxHour; $i++){
         if(isset($data[$i])){
             array_push($ChartDatasets[$team], $data[$i]);
         }else{
-            array_push($ChartDatasets[$team], null);
+            array_push($ChartDatasets[$team], 0);
+        }
+    }
+}
+
+// Fülle fehlende Teams mit Nullen auf
+foreach ($ChartDatasets as $team => $data) {
+    if (empty($data)) {
+        for($i = 0; $i <= $maxHour; $i++){
+            array_push($ChartDatasets[$team], 0);
         }
     }
 }
@@ -278,7 +303,7 @@ var data = {
             {
                 label: 'ITSM Service Desk',
                 data: <?php echo json_encode($ChartDatasets['ITSM Service Desk']) ?>,
-                spanGaps: false,
+                spanGaps: true,
                 fill: false,
                 borderColor: ['rgba(115, 255, 0, 1)'],
                 borderWidth: 1
@@ -286,7 +311,7 @@ var data = {
             {
                 label: 'Workplace Service 2nd Level',
                 data: <?php echo json_encode($ChartDatasets['Workplace Service 2nd Level']) ?>,
-                spanGaps: false,
+                spanGaps: true,
                 fill: false,
                 borderColor: ['rgba(228, 224, 18, 1)'],
                 borderWidth: 1
@@ -294,7 +319,7 @@ var data = {
             {
                 label: 'Infrastructure 2nd Level',
                 data: <?php echo json_encode($ChartDatasets['Infrastructure 2nd Level']) ?>,
-                spanGaps: false,
+                spanGaps: true,
                 fill: false,
                 borderColor: ['rgba(247, 142, 5, 1)'],
                 borderWidth: 1
@@ -302,7 +327,7 @@ var data = {
             {
                 label: 'Infrastructure 3rd Level',
                 data: <?php echo json_encode($ChartDatasets['Infrastructure 3rd Level']) ?>,
-                spanGaps: false,
+                spanGaps: true,
                 fill: false,
                 borderColor: ['rgba(245, 14, 64, 1)'],
                 borderWidth: 1
