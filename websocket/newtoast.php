@@ -23,41 +23,15 @@
     <link rel="stylesheet" type="text/css" href="./css/style.css">
 </head>
 <body>
+
+<?php 
+$active_page = 'newtoast';
+$show_reload_btn = true;
+include('navbar.php'); 
+?>
+
 <div class="container-fluid">
-    <div class="row" style="margin-top: 0">
-        <nav class="navbar navbar-default navbar-fixed-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"><i class="fas fa-tachometer-alt"></i> IT-Dashboard</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li><a href="./history.php"><i class="fas fa-history"></i> History</a></li>
-                        <li><a href="./best.php"><i class="fas fa-star"></i> Best</a></li>
-                        <li><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
-                        <li><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
-                        <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
-						<li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
-                        <li class="active"><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
-                        <li>
-                            <p class="navbar-btn">
-                                <button class="btn btn-default" id="reload">Reload</button>
-                            </p>
-                        </li>
-                    </ul>
-                </div><!--/.nav-collapse -->
-            </div><!--/.container-fluid -->
-        </nav>
-    </div>
-    <div class="row" style="margin-top: 5%;">
+    <div class="row" style="margin-top: 80px;">
         <form class="form-horizontal" action="#">
             <fieldset>
                 <?php
@@ -71,14 +45,21 @@
                     "ToastTime",
                     "ToastVolume",
                     "ToastHistory",
-                    "ToastVideoNoRepeat"
+                    "ToastVideoNoRepeat",
+                    "Target"
                 );
 
                 foreach($properties as $item){
                     echo '<div class="form-group">';
                         echo '<label class="col-md-4 control-label" for="textinput">'.$item.'</label>  ';
                         echo '<div class="col-md-4">';
-                            echo '<input id="'.$item.'" name="'.$item.'" type="text" placeholder="'.$item.'" class="form-control input-md">';
+                            if ($item === 'Target') {
+                                echo '<select id="'.$item.'" name="'.$item.'" class="form-control">';
+                                echo '<option value="Alle">Alle Dashboards</option>';
+                                echo '</select>';
+                            } else {
+                                echo '<input id="'.$item.'" name="'.$item.'" type="text" placeholder="'.$item.'" class="form-control input-md">';
+                            }
                         echo '</div>';
                     echo '</div>';
                 } ?>
@@ -95,7 +76,135 @@
 </div>
 <script src="../monitor/lib/js/jquery.min.js"></script>
 <script src="../monitor/lib/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../config.js.php"></script>
 <script>
+    var websocket;
+    var reconnectAttempts = 0;
+    var maxReconnectAttempts = 5;
+    var reconnectDelay = 1000;
+    var reconnectTimer = null;
+    var intentionalClose = false;
+    var isConnecting = false;
+    
+    function connectWebSocket() {
+        // Prevent parallel connection attempts
+        if (isConnecting) {
+            console.log("Connection bereits im Gange, überspringe...");
+            return;
+        }
+        
+        isConnecting = true;
+        
+        // Clear any pending reconnect timer
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        
+        // Close existing websocket if it exists
+        if (websocket) {
+            try {
+                websocket.onclose = null;
+                websocket.onerror = null;
+                websocket.onmessage = null;
+                websocket.onopen = null;
+                websocket.close();
+            } catch (e) {
+                // Ignore close errors
+            }
+        }
+        
+        websocket = new WebSocket(DASHBOARD_CONFIG.WEBSOCKET_URL);
+        
+        websocket.onopen = function(ev) {
+            console.log('WebSocket verbunden');
+            reconnectAttempts = 0;
+            reconnectDelay = 1000;
+            isConnecting = false;
+            
+            // Register and request dashboard list
+            var msg = { message: '!reg [NewToast]' };
+            websocket.send(JSON.stringify(msg));
+            
+            msg = { message: '!dashboardlist' };
+            websocket.send(JSON.stringify(msg));
+        };
+        
+        websocket.onerror = function(ev) {
+            console.log('WebSocket Error');
+            isConnecting = false;
+        };
+        
+        websocket.onclose = function(ev) {
+            console.log('WebSocket geschlossen');
+            isConnecting = false;
+            
+            if (intentionalClose) {
+                return;
+            }
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                var delay = reconnectDelay * Math.pow(2, reconnectAttempts - 1);
+                
+                console.log("Reconnecting in " + (delay / 1000) + "s... (Attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+                
+                reconnectTimer = setTimeout(function() {
+                    console.log("Attempting to reconnect...");
+                    connectWebSocket();
+                }, delay);
+            } else {
+                console.log("Max reconnect attempts reached.");
+            }
+        };
+        
+        websocket.onmessage = function(ev) {
+            var msg = JSON.parse(ev.data);
+            
+            if (msg.type === 'auth') {
+                // Re-register and request dashboard list
+                var authMsg = { message: '!reg [NewToast]' };
+                websocket.send(JSON.stringify(authMsg));
+                
+                var listMsg = { message: '!dashboardlist' };
+                websocket.send(JSON.stringify(listMsg));
+            }
+            
+            if (msg.type === 'dashboardlist') {
+                // Update dashboard dropdown
+                var select = $('#Target');
+                // Clear all except "Alle"
+                select.find('option:not([value="Alle"])').remove();
+                
+                // Add each dashboard
+                if (msg.dashboards && msg.dashboards.length > 0) {
+                    msg.dashboards.forEach(function(dashboard) {
+                        select.append($('<option></option>').attr('value', dashboard).text(dashboard));
+                    });
+                }
+                
+                // Restore last selection from localStorage
+                var lastTarget = localStorage.getItem('lastToastTarget');
+                if (lastTarget) {
+                    select.val(lastTarget);
+                }
+            }
+        };
+    }
+    
+    // Clean disconnect on page unload
+    window.addEventListener('beforeunload', function() {
+        intentionalClose = true;
+        if (websocket) {
+            websocket.close();
+        }
+    });
+    
+    $(document).ready(function() {
+        // Initialize WebSocket connection
+        connectWebSocket();
+    });
+    
     function clean(obj) {
         var propNames = Object.getOwnPropertyNames(obj);
         for (var i = 0; i < propNames.length; i++) {
@@ -117,6 +226,12 @@
 
 
         clean(json);
+        
+        // Save last selection to localStorage
+        if (json.Target) {
+            localStorage.setItem('lastToastTarget', json.Target);
+        }
+        
         $.ajax({
             url: 'api.php',
             type: 'post',

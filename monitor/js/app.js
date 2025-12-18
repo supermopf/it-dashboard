@@ -1,5 +1,13 @@
 var websocket;
 var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
+var dashboardRegistered = false;
+var pendingDashboardName = null;
+var reconnectAttempts = 0;
+var maxReconnectAttempts = 20;
+var reconnectDelay = 1000; // Start with 1 second
+var reconnectTimer = null;
+var intentionalClose = false;
+var isConnecting = false; // Guard flag to prevent parallel connection attempts
 var SnowActive = false;
 var catstart = true;
 var radio_running = false;
@@ -136,48 +144,99 @@ function ButtonPage(page) {
 $(document).ready(function () {
     startTime();
     $.ajaxSetup({cache: false});
-    websocket = new WebSocket(wsUri);
+    
+    function connectWebSocket() {
+        // Prevent parallel connection attempts
+        if (isConnecting) {
+            console.log("Connection bereits im Gange, überspringe...");
+            return;
+        }
+        
+        isConnecting = true;
+        
+        // Clear any pending reconnect timer
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        
+        // Close existing websocket if it exists
+        if (websocket) {
+            try {
+                // Remove event handlers to prevent triggering reconnect
+                websocket.onclose = null;
+                websocket.onerror = null;
+                websocket.onmessage = null;
+                websocket.onopen = null;
+                websocket.close();
+            } catch (e) {
+                // Ignore close errors
+            }
+        }
+        
+        websocket = new WebSocket(wsUri);
 
-    websocket.onopen = function (ev) {
-        console.log("Verbunden!");
-        var msg = {
-            message: '!repeat'
+        websocket.onopen = function (ev) {
+            console.log("Verbunden!");
+            reconnectAttempts = 0; // Reset on successful connection
+            reconnectDelay = 1000;
+            isConnecting = false; // Reset guard flag
+            
+            var msg = {
+                message: '!repeat'
+            };
+            websocket.send(JSON.stringify(msg));
+
+            var name = getURLParameter('Name');
+
+            // Register with old system
+            msg = {
+                message: '!reg [Dashboard]' + name
+            };
+            websocket.send(JSON.stringify(msg));
+            
+            // Store dashboard name for registration after first server message
+            if (name) {
+                pendingDashboardName = name;
+                dashboardRegistered = false;
+            }
         };
-        websocket.send(JSON.stringify(msg));
-
-        var name = getURLParameter('Name');
-
-        msg = {
-            message: '!reg [Dashboard]' + name
-        };
-        websocket.send(JSON.stringify(msg));
-    };
 
 
     websocket.onmessage = function (ev) {
         var msg = JSON.parse(ev.data); //PHP sends Json data
         var type = msg.type; //message type
         var message = msg.message; //message text
+        
+        // Register dashboard after receiving first message from server (connection is stable)
+        if (!dashboardRegistered && pendingDashboardName) {
+            dashboardRegistered = true;
+            var regMsg = {
+                message: '!dashboard ' + pendingDashboardName
+            };
+            websocket.send(JSON.stringify(regMsg));
+            console.log("Dashboard registered as: " + pendingDashboardName);
+        }
 
         if (type == 'command') {
             var command = message.substring(0, message.indexOf(' '));
             // console.log("Befehl erhalten: "+message);
             switch (command) {
                 case "!video":
-                    if (getURLParameter('Name') == "Main") {
+                    if (getURLParameter('Name')) {
                         message = message.replace("!video ", "");
                         LoadPage("YT", message);
                     }
                     break;
 				case "!roll":
-                    if (getURLParameter('Name') == "Main") {
+                    if (getURLParameter('Name')) {
                         message = message.replace("!roll ", "");
 						rolls = message.split(" ");
                         startSpin(rolls[0],rolls[1],rolls[2]);
                     }
 					break;
                 case "!bus":
-                    if (getURLParameter('Name') == "Main") {
+                    if (getURLParameter('Name')) {
                         message = message.replace("!bus ", "");
                         switch (message) {
                             case "start":
@@ -233,7 +292,7 @@ $(document).ready(function () {
                     }
                     message = message.replace("!page ", "");
                     if (message === "FUN" || message === "WHEEL" ) {
-                        if (getURLParameter('Name') === "Main") {
+                        if (getURLParameter('Name')) {
                             LoadPage(message);
                         }
                     } else {
@@ -245,7 +304,7 @@ $(document).ready(function () {
                     break;
                 case "!urgent":
                     var audio;
-                    if (getURLParameter('Name') === "Main") {
+                    if (getURLParameter('Name')) {
                         message = JSON.parse(message.replace("!urgent ", ""));
                         if (message.ToastColor !== undefined && message.ToastColor !== "") {
                             $(".modal-header").css('background-color', message.ToastColor);
@@ -325,7 +384,7 @@ $(document).ready(function () {
                 } else {
                     switch (rnd) {
                         case 1:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="catimg" src="./img/cat.gif">');
                                 catstart = false;
                                 var catsound = new Audio('./res/meow.mp3');
@@ -336,7 +395,7 @@ $(document).ready(function () {
 
                             break;
                         case 2:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="dogimg" src="./img/dog.gif">');
                                 catstart = false;
                                 var dogsound = new Audio('./res/bark.mp3');
@@ -346,7 +405,7 @@ $(document).ready(function () {
                             }
                             break;
                         case 3:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="dinoimg" src="./img/dino.gif">');
                                 catstart = false;
                                 var dinosound = new Audio('./res/bark.mp3');
@@ -356,7 +415,7 @@ $(document).ready(function () {
                             }
                             break;
                         case 4:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="dinoimg2" src="./img/dino2.gif">');
                                 catstart = false;
                                 var dinosound = new Audio('./res/bark.mp3');
@@ -366,7 +425,7 @@ $(document).ready(function () {
                             }
                             break;
                         case 5:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="dkimg" src="./img/dk.gif">');
                                 catstart = false;
                                 var dksound = new Audio('./res/bark.mp3');
@@ -376,7 +435,7 @@ $(document).ready(function () {
                             }
                             break;
                         case 6:
-                            if (catstart && getURLParameter('Name') === "Main") {
+                            if (catstart && getURLParameter('Name')) {
                                 $('#cat').html('<img id="michaelimg" src="./img/michael.gif">');
                                 catstart = false;
                                 var heeheesound = new Audio('./res/heehee.mp3');
@@ -403,7 +462,7 @@ $(document).ready(function () {
                 launch_toast(msg.RadioStationIcon,msg.SongTitle)
             }
 
-            if (msg.Radio === "true" && YTRunning === false && getURLParameter('Name') === "Main") {
+            if (msg.Radio === "true" && YTRunning === false && getURLParameter('Name')) {
                 radio.volume = msg.Radiovolume;
 
 
@@ -478,19 +537,64 @@ $(document).ready(function () {
                 message: '!reg [Dashboard]' + name
             };
             websocket.send(JSON.stringify(msg));
+            
+            // Re-register dashboard with targeting system
+            if (name) {
+                var regMsg = {
+                    message: '!dashboard ' + name
+                };
+                websocket.send(JSON.stringify(regMsg));
+                console.log("Dashboard re-registered as: " + name);
+            }
         }
-
-
+;
     };
-
+    
     websocket.onerror = function (ev) {
-        console.log("Error Occurred - " + ev.data)
+        console.log("WebSocket Error");
+        isConnecting = false; // Reset guard flag on error
     };
+    
     websocket.onclose = function (ev) {
         console.log("Connection Closed");
-        window.location.reload();
-
+        isConnecting = false; // Reset guard flag
+        
+        // Don't reconnect if it was intentional (e.g., page unload)
+        if (intentionalClose) {
+            return;
+        }
+        
+        // Try to reconnect with exponential backoff
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            var delay = reconnectDelay * Math.pow(2, reconnectAttempts - 1); // Exponential backoff
+            
+            console.log("Reconnecting in " + (delay / 1000) + " seconds... (Attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+            
+            reconnectTimer = setTimeout(function() {
+                console.log("Attempting to reconnect...");
+                connectWebSocket();
+            }, delay);
+        } else {
+            console.log("Max reconnect attempts reached. Please reload the page manually.");
+            alert("Verbindung zum Server verloren. Bitte Seite neu laden.");
+        }
     };
+    }
+    
+    // Initial connection
+    connectWebSocket();
+    
+    // Clean disconnect on page unload
+    window.addEventListener('beforeunload', function() {
+        intentionalClose = true;
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+        }
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            websocket.close();
+        }
+    });
 });
 
 $.fn.extend({

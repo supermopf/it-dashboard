@@ -1,4 +1,38 @@
 <?php
+// Global error and exception handlers for comprehensive logging
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    $errorType = '';
+    switch ($errno) {
+        case E_ERROR: $errorType = 'E_ERROR'; break;
+        case E_WARNING: $errorType = 'E_WARNING'; break;
+        case E_PARSE: $errorType = 'E_PARSE'; break;
+        case E_NOTICE: $errorType = 'E_NOTICE'; break;
+        default: $errorType = "Error[$errno]"; break;
+    }
+    $logLine = date("Y-m-d H:i:s") . " [$errorType] $errstr in $errfile:$errline" . PHP_EOL;
+    echo $logLine;
+    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+    return false; // Let PHP handle it normally too
+});
+
+set_exception_handler(function($exception) {
+    $logLine = date("Y-m-d H:i:s") . " [UNCAUGHT EXCEPTION] " . $exception->getMessage() . 
+               " in " . $exception->getFile() . ":" . $exception->getLine() . PHP_EOL;
+    $logLine .= "Stack trace:" . PHP_EOL . $exception->getTraceAsString() . PHP_EOL;
+    echo $logLine;
+    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+});
+
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        $logLine = date("Y-m-d H:i:s") . " [FATAL ERROR] " . $error['message'] . 
+                   " in " . $error['file'] . ":" . $error['line'] . PHP_EOL;
+        echo $logLine;
+        @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+    }
+});
+
 include(__DIR__ .'/../config.php');
 require_once(__DIR__ . '/db_helper.php');
 
@@ -37,8 +71,8 @@ $lastsongpull = strtotime("now");
 $Radio = True;
 $Radiostation = DEFAULT_RADIOSTATION;
 $RadioStationIcon = DEFAULT_RADIOSTATION_ICON;
-$Radiovolume = 0.05;
-$YTvolume = 0.5;
+$Radiovolume = 0.01;
+$YTvolume = 0.01;
 $ForwardedIP = "";
 $SongTitle = "";
 $PageStatusCache = LoadPageStatus();
@@ -50,7 +84,7 @@ define("Debug", True);
  * 2 = Normal
  * 3 = ALLES
  */
-define("DebugLogLevel", 1);
+define("DebugLogLevel", 3);
 
 
 $CycleTime = 30;
@@ -58,6 +92,10 @@ $CycleTime = 30;
 
 $registered = array();
 $ProxyMatch = array();
+$dashboards = array(); // Dashboard registry: [resource_id => ['socket' => resource, 'name' => dashboardName]]
+$connectionCountByIP = array(); // Track connections per IP: [IP => count]
+
+define("MAX_CONNECTIONS_PER_IP", 10); // Maximum connections from single IP
 
 function get_http_response_code($url) {
     $headers = get_headers($url);
@@ -68,14 +106,25 @@ function LogDebug($message, $LogLevel = 3)
 {
     if (Debug) {
         if (DebugLogLevel >= $LogLevel) {
-            echo date("Y-m-d H:i") . " [DEBUG] " . $message . PHP_EOL;
+            $logLine = date("Y-m-d H:i:s") . " [DEBUG] " . $message . PHP_EOL;
+            echo $logLine;
+            @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
         }
     }
 }
 
 function LogNormal($message)
 {
-    echo date("Y-m-d H:i") . " " . $message . PHP_EOL;
+    // Handle Exception objects
+    if ($message instanceof Exception) {
+        $message = "Exception: " . $message->getMessage() . " in " . $message->getFile() . ":" . $message->getLine();
+    } elseif ($message instanceof Throwable) {
+        $message = "Error: " . $message->getMessage() . " in " . $message->getFile() . ":" . $message->getLine();
+    }
+    
+    $logLine = date("Y-m-d H:i:s") . " " . $message . PHP_EOL;
+    echo $logLine;
+    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
 }
 
 function LoadPageStatus() {
@@ -103,30 +152,60 @@ function PageHasData($pageNumber, $pageStatusCache) {
 
 //start endless loop, so that our script doesn't stop
 while (true) {
-    //manage multipal connections
-    $changed = $clients;
-    //returns the socket resources in $changed array
-    socket_select($changed, $null, $null, 0, 10);
+    try {
+        //manage multipal connections
+        $changed = $clients;
+        
+        // Filter out invalid sockets before socket_select
+        $changed = array_filter($changed, function($client) {
+            return is_resource($client) && get_resource_type($client) === 'Socket';
+        });
+        
+        if (empty($changed)) {
+            usleep(10000); // 10ms sleep if no valid clients
+            continue;
+        }
+        
+        //returns the socket resources in $changed array
+        socket_select($changed, $null, $null, 0, 10);
 
 
     //check for new socket
     if (in_array($socket, $changed)) {
         $socket_new = socket_accept($socket); //accpet new socket
-        $clients[] = $socket_new; //add socket to client array
-
+        
         $header = socket_read($socket_new, 1024); //read data sent by the socket
         perform_handshaking($header, $socket_new, $host, $port, $ForwardedIP); //perform websocket handshake
 
         $Connection = explode(":",$ForwardedIP);
         $ip = $Connection[0];
         $port = $Connection[1];
+        
+        // Check connection limit per IP
+        if (isset($connectionCountByIP[$ip]) && $connectionCountByIP[$ip] >= MAX_CONNECTIONS_PER_IP) {
+            LogNormal("Connection limit exceeded for IP: $ip (current: " . $connectionCountByIP[$ip] . ", max: " . MAX_CONNECTIONS_PER_IP . ")");
+            socket_close($socket_new);
+            
+            //make room for new socket
+            $found_socket = array_search($socket, $changed);
+            unset($changed[$found_socket]);
+            continue; // Skip to next iteration
+        }
+        
+        $clients[] = $socket_new; //add socket to client array
+        
+        // Increment connection counter for this IP
+        if (!isset($connectionCountByIP[$ip])) {
+            $connectionCountByIP[$ip] = 0;
+        }
+        $connectionCountByIP[$ip]++;
 
         socket_getpeername($socket_new, $proxyip, $proxyport);
 
         $ProxyMatch[$proxyip . ":" . $proxyport] = array('IP' => $ip,'Port' => $port);
 
-        $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $port . ' (' . gethostbyaddr($ip) . ') connected (' . (count($clients) - 1) . ' Clients)'))); //prepare json data
-        LogDebug($ip . " verbunden (" . count($clients) . " Clients)", 2);
+        $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $port . ' (' . gethostbyaddr($ip) . ') connected (' . (count($clients) - 1) . ' Clients, IP has ' . $connectionCountByIP[$ip] . ' connections)'))); //prepare json data
+        LogDebug($ip . " verbunden (" . count($clients) . " Clients, IP total: " . $connectionCountByIP[$ip] . ")", 2);
         send_message($response); //notify all users about new connection
 
         //make room for new socket
@@ -161,12 +240,20 @@ while (true) {
 			if ($Page == 10) {
 				$Page = 1;
 				//Check for Snow
-				$json = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
-				$oIsernhagen = json_decode($json);
-				if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
-					$Snow = True;
-				} else {
-					$Snow = False;
+				try {
+					$json = @file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+					if ($json !== false) {
+						$oIsernhagen = json_decode($json);
+						if ($oIsernhagen && isset($oIsernhagen->weather[0]->description)) {
+							if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
+								$Snow = True;
+							} else {
+								$Snow = False;
+							}
+						}
+					}
+				} catch (Exception $e) {
+					LogDebug("Weather API error: " . $e->getMessage(), 1);
 				}
 			} else {
 				$Page++;
@@ -282,12 +369,45 @@ while (true) {
                 } elseif (substr($user_message, 0, 4) == "!reg") {
                     $name = "";
                     if (socket_getpeername($changed_socket, $ip, $port)) {
-                        $split = explode(" ", $user_message);
-                        $name = $split[1];
+                        $split = explode(" ", $user_message, 2);
+                        $name = isset($split[1]) ? trim($split[1]) : "";
 
                         $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
 
                         $registered[$RealIP] = $name;
+                    }
+                } elseif ($user_message == "!dashboardlist") {
+                    // Return list of registered dashboards (must be before !dashboard check!)
+                    LogNormal("!dashboardlist command received");
+                    $dashboardList = array();
+                    foreach ($dashboards as $entry) {
+                        $name = $entry['name'];
+                        if (!in_array($name, $dashboardList)) {
+                            $dashboardList[] = $name;
+                        }
+                    }
+                    
+                    LogNormal("Sending dashboard list with " . count($dashboardList) . " dashboards: " . implode(", ", $dashboardList));
+                    
+                    $var_array = array(
+                        "type" => "dashboardlist",
+                        "dashboards" => $dashboardList
+                    );
+                    $command = mask(json_encode($var_array));
+                    @socket_write($changed_socket, $command, strlen($command));
+                    LogDebug("Sent dashboard list: " . implode(", ", $dashboardList), 2);
+                } elseif (substr($user_message, 0, 10) == "!dashboard") {
+                    // Dashboard registration: !dashboard <name>
+                    $split = explode(" ", $user_message, 2);
+                    if (isset($split[1]) && !empty(trim($split[1]))) {
+                        $dashboardName = trim($split[1]);
+                        $resourceId = (int)$changed_socket;
+                        $dashboards[$resourceId] = array('socket' => $changed_socket, 'name' => $dashboardName);
+                        
+                        if (socket_getpeername($changed_socket, $ip, $port)) {
+                            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+                            LogNormal("Dashboard '$dashboardName' registered from $RealIP");
+                        }
                     }
                 } elseif ($user_message == "!clientlist") {
                     foreach ($clients as $clt) {
@@ -336,8 +456,21 @@ while (true) {
                     $command = mask(json_encode(array('type' => 'command', 'message' => "!roll $roll1 $roll2 $roll3"))); //prepare json data
                     send_message($command);
                 } elseif (substr($user_message, 0, 6) == "!video") {
-                    $split = explode("!video ", $user_message);
-                    $url = trim($split[1]);
+                    // Format: !video <url> [target]
+                    $parts = explode("!video ", $user_message, 2);
+                    $params = trim($parts[1]);
+                    
+                    // Check if target is specified (format: URL|Target or just URL)
+                    $target = "Alle"; // Default to all dashboards
+                    $url = $params;
+                    if (strpos($params, '|') !== false) {
+                        $urlParts = explode('|', $params, 2);
+                        $url = trim($urlParts[0]);
+                        $targetParam = trim($urlParts[1]);
+                        if (!empty($targetParam)) {
+                            $target = $targetParam;
+                        }
+                    }
                     
                     // Save to database
                     try {
@@ -347,8 +480,12 @@ while (true) {
                         LogDebug("Failed to save YouTube URL to database: " . $e->getMessage(), 1);
                     }
 
-                    $response_text = mask(json_encode(array('type' => 'command', 'message' => $user_message)));
-                    send_message($response_text);
+                    $response_text = mask(json_encode(array('type' => 'command', 'message' => "!video " . $url)));
+                    send_message($response_text, $target);
+                    
+                    if ($target) {
+                        LogNormal("YouTube video sent to dashboard: $target");
+                    }
                 } elseif (substr($user_message, 0, 7) == "!urgent") {
 
                     $split = explode("!urgent ", $user_message);
@@ -395,6 +532,18 @@ while (true) {
                         }
                     }
                     $json = json_encode($obj);
+                    
+                    // Extract target if specified
+                    $target = "Alle"; // Default to all dashboards
+                    if (isset($obj->Target) && !empty($obj->Target)) {
+                        $target = $obj->Target;
+                    }
+                    // Remove Target from message payload (not needed in client message)
+                    if (isset($obj->Target)) {
+                        unset($obj->Target);
+                        $json = json_encode($obj);
+                    }
+                    
                     if (isset($obj->ToastHistory) && $obj->ToastHistory == "false") {
                         //Do not save
                     } else {
@@ -407,7 +556,11 @@ while (true) {
                         }
                     }
                     $response_text = mask(json_encode(array('type' => 'command', 'message' => '!urgent ' . $json)));
-                    send_message($response_text); //send data
+                    send_message($response_text, $target); //send data
+                    
+                    if ($target) {
+                        LogNormal("Toast sent to dashboard: $target");
+                    }
                 } else {
 //				    echo $user_message;
                     $response_text = mask(json_encode(array('type' => 'command', 'message' => $user_message)));
@@ -422,7 +575,24 @@ while (true) {
             // remove client for $clients array
             $found_socket = array_search($changed_socket, $clients);
             socket_getpeername($changed_socket, $ip, $port);
+            
+            // Decrement connection counter for this IP
+            $realClientIP = $ProxyMatch[$ip . ":" . $port]['IP'];
+            if (isset($connectionCountByIP[$realClientIP]) && $connectionCountByIP[$realClientIP] > 0) {
+                $connectionCountByIP[$realClientIP]--;
+                LogDebug("Connection count for $realClientIP decreased to " . $connectionCountByIP[$realClientIP], 3);
+            }
+            
+            // Remove from dashboard registry if registered
+            $resourceId = (int)$changed_socket;
+            if (isset($dashboards[$resourceId])) {
+                $dashboardName = $dashboards[$resourceId]['name'];
+                unset($dashboards[$resourceId]);
+                LogNormal("Dashboard '$dashboardName' unregistered");
+            }
+            
             unset($clients[$found_socket]);
+            $clients = array_values($clients); // Re-index array to prevent holes
             socket_close($changed_socket);
 
             $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
@@ -432,6 +602,17 @@ while (true) {
             LogDebug($ip . " getrennt", 2);
             send_message($response);
         }
+    }
+    } catch (Exception $e) {
+        LogNormal($e);
+        LogNormal("Error in main loop - continuing...");
+        // Log full stack trace for debugging
+        LogDebug("Exception trace: " . $e->getTraceAsString(), 1);
+    } catch (Throwable $e) {
+        LogNormal($e);
+        LogNormal("Fatal error in main loop - continuing...");
+        // Log full stack trace for debugging
+        LogDebug("Throwable trace: " . $e->getTraceAsString(), 1);
     }
 }
 // close the listening socket
@@ -447,13 +628,63 @@ function mime2ext($mime)
     return false;
 }
 
-function send_message($msg)
+function send_message($msg, $target = "Alle")
 {
-    global $clients;
-    foreach ($clients as $changed_socket) {
-        @socket_write($changed_socket, $msg, strlen($msg));
+    global $clients, $dashboards;
+    
+    // Default to "Alle" if empty or null
+    if ($target === null || $target === "") {
+        $target = "Alle";
     }
-    return true;
+    
+    // If target is "Alle", send only to registered dashboards
+    if (strtolower($target) === "alle") {
+        $sentCount = 0;
+        foreach ($dashboards as $entry) {
+            $socket = $entry['socket'];
+            if (is_resource($socket)) {
+                @socket_write($socket, $msg, strlen($msg));
+                $sentCount++;
+            }
+        }
+        
+        // Also send to non-dashboard clients (for backward compatibility with control, admin, etc.)
+        $dashboardSockets = array();
+        foreach ($dashboards as $entry) {
+            $dashboardSockets[] = (int)$entry['socket'];
+        }
+        
+        foreach ($clients as $changed_socket) {
+            if ($changed_socket === $clients[0]) continue; // Skip listening socket
+            
+            // Skip if already sent (is a registered dashboard)
+            $resourceId = (int)$changed_socket;
+            if (in_array($resourceId, $dashboardSockets)) continue;
+            
+            if (is_resource($changed_socket)) {
+                @socket_write($changed_socket, $msg, strlen($msg));
+                $sentCount++;
+            }
+        }
+        
+        LogDebug("Sent message to $sentCount clients (Alle)", 2);
+        return true;
+    }
+    
+    // Send only to specific dashboard(s)
+    $sentCount = 0;
+    foreach ($dashboards as $entry) {
+        if ($entry['name'] === $target) {
+            $socket = $entry['socket'];
+            if (is_resource($socket)) {
+                @socket_write($socket, $msg, strlen($msg));
+                $sentCount++;
+            }
+        }
+    }
+    
+    LogDebug("Sent message to $sentCount dashboard(s) with target '$target'", 2);
+    return $sentCount > 0;
 }
 
 

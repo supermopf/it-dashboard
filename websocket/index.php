@@ -15,63 +15,7 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" type="text/css" href="./css/style.css">
     <style>
-        body {
-            background: #1a1a1a;
-            color: #e0e0e0;
-            font-family: 'Lato', sans-serif;
-        }
-        .navbar-default {
-            background: #2c3e50;
-            border-color: #34495e;
-        }
-        .navbar-default .navbar-brand,
-        .navbar-default .navbar-nav > li > a {
-            color: #ecf0f1;
-        }
-        .navbar-default .navbar-nav > li > a:hover,
-        .navbar-default .navbar-nav > li > a:focus {
-            background: #34495e;
-            color: #fff;
-        }
-        .navbar-default .navbar-nav > .active > a,
-        .navbar-default .navbar-nav > .active > a:hover,
-        .navbar-default .navbar-nav > .active > a:focus {
-            background: #34495e;
-            color: #fff;
-        }
-        .panel {
-            background: #2c2c2c;
-            border-color: #3c3c3c;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .panel-heading {
-            background: #34495e !important;
-            color: #ecf0f1 !important;
-            border-color: #34495e !important;
-            font-weight: 600;
-        }
-        .panel-body {
-            background: #2c2c2c;
-        }
-        .panel-primary > .panel-heading {
-            background: #3498db !important;
-            border-color: #3498db !important;
-        }
-        .panel-success > .panel-heading {
-            background: #27ae60 !important;
-            border-color: #27ae60 !important;
-        }
-        .panel-warning > .panel-heading {
-            background: #f39c12 !important;
-            border-color: #f39c12 !important;
-        }
-        .panel-info > .panel-heading {
-            background: #16a085 !important;
-            border-color: #16a085 !important;
-        }
-        .row {
-            margin-top: 15px;
-        }
+        /* Admin Panel Specific Styles */
         .status-badge {
             display: inline-block;
             padding: 6px 12px;
@@ -107,35 +51,6 @@
             overflow-y: auto;
             font-size: 12px;
         }
-        .table {
-            color: #e0e0e0;
-        }
-        .table > thead > tr > th {
-            border-color: #3c3c3c;
-            background: #34495e;
-            color: #ecf0f1;
-        }
-        .table > tbody > tr > td {
-            border-color: #3c3c3c;
-            background: #2c2c2c;
-            color: #e0e0e0;
-        }
-        .table-striped > tbody > tr:nth-of-type(odd) {
-            background-color: #252525;
-        }
-        .table-hover > tbody > tr:hover {
-            background-color: #34495e;
-        }
-        .form-control {
-            background: #1a1a1a;
-            border-color: #3c3c3c;
-            color: #e0e0e0;
-        }
-        .form-control:focus {
-            background: #252525;
-            border-color: #3498db;
-            color: #e0e0e0;
-        }
         .btn-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -144,20 +59,6 @@
         }
         .btn-grid .btn {
             margin: 0;
-        }
-        .ws-status {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .ws-status.connected {
-            background: #2ecc71;
-            box-shadow: 0 0 8px #2ecc71;
-        }
-        .ws-status.disconnected {
-            background: #e74c3c;
         }
         .control-section {
             margin-bottom: 20px;
@@ -274,46 +175,14 @@
 </head>
 <body>
 
+<?php 
+$active_page = 'admin';
+$show_ws_status = true;
+$show_reload_btn = true;
+include('navbar.php'); 
+?>
+
 <div class="container-fluid">
-    <div class="row" style="margin-top: 0">
-        <nav class="navbar navbar-default navbar-fixed-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"><i class="fas fa-tachometer-alt"></i> IT-Dashboard</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li><a href="./history.php"><i class="fas fa-history"></i> History</a></li>
-                        <li><a href="./best.php"><i class="fas fa-star"></i> Best</a></li>
-                        <li><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
-                        <li class="active"><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
-                        <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
-						<li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
-                        <li><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
-                        <li>
-                            <p class="navbar-text">
-                                <span class="ws-status disconnected" id="ws-indicator"></span>
-                                <span id="ws-status-text">Nicht verbunden</span>
-                            </p>
-                        </li>
-                        <li>
-                            <p class="navbar-btn">
-                                <button class="btn btn-warning" id="reload"><i class="fas fa-sync-alt"></i> Reload All</button>
-                            </p>
-                        </li>
-                    </ul>
-                </div><!--/.nav-collapse -->
-            </div><!--/.container-fluid -->
-        </nav>
-    </div>
     
     <!-- Main Controls -->
     <div class="row" style="margin-top: 80px;">
@@ -539,6 +408,26 @@
             </div>
         </div>
     </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <i class="fas fa-tv"></i> Aktive Dashboards
+                    <button class="btn btn-sm btn-default pull-right" id="updatedashboards" style="margin-top: -5px;">
+                        <i class="fas fa-sync-alt"></i> Update
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div id="dashboardlist" style="min-height: 100px;">
+                        <div class="text-center" style="color: #7f8c8d;">
+                            <i class="fas fa-spinner fa-spin"></i> Lade Dashboards...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>
@@ -549,6 +438,13 @@
 
 <script language="javascript" type="text/javascript">
     var websocket;
+    var reconnectAttempts = 0;
+    var maxReconnectAttempts = 5;
+    var reconnectDelay = 1000;
+    var reconnectTimer = null;
+    var intentionalClose = false;
+    var isConnecting = false; // Guard flag to prevent parallel connection attempts
+    var initialDataLoaded = false; // Flag to load data only once after connection
     
     function clean(obj) {
         var propNames = Object.getOwnPropertyNames(obj);
@@ -582,8 +478,22 @@
     }
 
     function ListClients() {
+        if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+            LogToConsole("✗ Kann Clients nicht laden - nicht verbunden");
+            return;
+        }
         document.getElementById("clientlist").innerHTML = '<tr><td colspan="3" class="text-center" style="color: #7f8c8d;"><i class="fas fa-spinner fa-spin"></i> Lade...</td></tr>';
         var msg = { message: "!clientlist" };
+        websocket.send(JSON.stringify(msg));
+    }
+    
+    function ListDashboards() {
+        if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+            LogToConsole("✗ Kann Dashboards nicht laden - nicht verbunden");
+            return;
+        }
+        document.getElementById("dashboardlist").innerHTML = '<div class="text-center" style="color: #7f8c8d;"><i class="fas fa-spinner fa-spin"></i> Lade...</div>';
+        var msg = { message: "!dashboardlist" };
         websocket.send(JSON.stringify(msg));
     }
     
@@ -658,40 +568,220 @@
             sendCommand('!var YTvolume ' + vol);
         });
 
-        // WebSocket connection
-        var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
-        websocket = new WebSocket(wsUri);
+        // WebSocket connection function
+        function connectWebSocket() {
+            // Prevent parallel connection attempts
+            if (isConnecting) {
+                LogToConsole("⚠ Connection bereits im Gange, überspringe...");
+                return;
+            }
+            
+            isConnecting = true;
+            
+            // Clear any pending reconnect timer
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            
+            // Close existing websocket if it exists
+            if (websocket) {
+                try {
+                    // Remove event handlers to prevent triggering reconnect
+                    websocket.onclose = null;
+                    websocket.onerror = null;
+                    websocket.onmessage = null;
+                    websocket.onopen = null;
+                    websocket.close();
+                } catch (e) {
+                    // Ignore close errors
+                }
+            }
+            
+            var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
+            websocket = new WebSocket(wsUri);
 
-        websocket.onopen = function (ev) {
-            LogToConsole("✓ WebSocket verbunden!");
-            updateWSStatus(true);
-            msg = { message: '!reg [Adminpanel]' };
-            websocket.send(JSON.stringify(msg));
-            ListClients();
-            // Request initial status update
-            setTimeout(function() {
-                sendCommand('!status');
-            }, 500);
-        };
+            websocket.onopen = function (ev) {
+                LogToConsole("✓ WebSocket verbunden!");
+                updateWSStatus(true);
+                reconnectAttempts = 0; // Reset on successful connection
+                reconnectDelay = 1000;
+                isConnecting = false; // Reset guard flag
+                initialDataLoaded = false; // Reset flag on new connection
+                
+                // Only register, wait for first server message before requesting data
+                var msg = { message: '!reg [Adminpanel]' };
+                websocket.send(JSON.stringify(msg));
+            };
 
-        websocket.onerror = function (ev) {
-            LogToConsole("✗ WebSocket Fehler!");
-            updateWSStatus(false);
-        };
+            websocket.onerror = function (ev) {
+                LogToConsole("✗ WebSocket Fehler!");
+                updateWSStatus(false);
+                isConnecting = false; // Reset guard flag on error
+            };
+            
+            websocket.onclose = function (ev) {
+                LogToConsole("✗ WebSocket Verbindung geschlossen");
+                updateWSStatus(false);
+                isConnecting = false; // Reset guard flag
+                
+                // Don't reconnect if it was intentional
+                if (intentionalClose) {
+                    return;
+                }
+                
+                // Try to reconnect with exponential backoff
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    var delay = reconnectDelay * Math.pow(2, reconnectAttempts - 1);
+                    
+                    LogToConsole("→ Reconnect in " + (delay / 1000) + "s... (Versuch " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+                    
+                    reconnectTimer = setTimeout(function() {
+                        LogToConsole("→ Versuche Reconnect...");
+                        connectWebSocket();
+                    }, delay);
+                } else {
+                    LogToConsole("✗ Max Reconnect-Versuche erreicht. Bitte Seite neu laden.");
+                }
+            };
+
+            websocket.onmessage = function (ev) {
+                var msg = JSON.parse(ev.data);
+                var type = msg.type;
+                var message = msg.message;
+
+                if (type == 'update') {
+                    // Load initial data on first update message
+                    if (!initialDataLoaded) {
+                        initialDataLoaded = true;
+                        var dataMsg = { message: "!clientlist" };
+                        websocket.send(JSON.stringify(dataMsg));
+                        
+                        dataMsg = { message: "!dashboardlist" };
+                        websocket.send(JSON.stringify(dataMsg));
+                    }
+                    
+                    updateStatusBadge('Page', msg.Page);
+                    updateStatusBadge('FUN', msg.FUN);
+                    updateStatusBadge('Cat', msg.Cat);
+                    updateStatusBadge('Snow', msg.Snow);
+                    updateStatusBadge('BusActive', msg.BusActive);
+                    updateStatusBadge('Wheel', msg.Wheel);
+                    updateStatusBadge('Cycle', msg.Cycle);
+                    updateStatusBadge('CD', msg.CD);
+                    updateStatusBadge('Radio', msg.Radio);
+                    updateStatusBadge('Radiovolume', msg.Radiovolume);
+                    updateStatusBadge('YTvolume', msg.YTvolume);
+                    
+                    // Update toggle switches - set data flag to prevent triggering change event
+                    var updateToggle = function(selector, value) {
+                        var toggle = $(selector);
+                        // Check for various true values: true, 'true', 'True', 1
+                        var isOn = value === true || value === 'true' || value === 'True' || value === 1 || value === '1';
+                        toggle.data('updating', true);
+                        toggle.prop('checked', isOn);
+                        toggle.data('updating', false);
+                        return isOn;
+                    };
+                    
+                    var funOn = updateToggle('#fun-toggle', msg.FUN);
+                    var radioOn = updateToggle('#radio-toggle', msg.Radio);
+                    var snowOn = updateToggle('#snow-toggle', msg.Snow);
+                    var wheelOn = updateToggle('#wheel-toggle', msg.Wheel);
+                    var cycleOn = updateToggle('#cycle-toggle', msg.Cycle);
+                    
+                    // Update status labels
+                    $('#fun-status').text(funOn ? 'On' : 'Off');
+                    $('#radio-status').text(radioOn ? 'On' : 'Off');
+                    $('#snow-status').text(snowOn ? 'On' : 'Off');
+                    $('#wheel-status').text(wheelOn ? 'On' : 'Off');
+                    $('#cycle-status').text(cycleOn ? 'On' : 'Off');
+                    
+                    // Show/hide wheel controls based on wheel status
+                    if (wheelOn) {
+                        $('#wheel-controls').slideDown();
+                    } else {
+                        $('#wheel-controls').slideUp();
+                    }
+                    
+                    $('#Radiostation').html(msg.Radiostation || '-');
+                    $('#SongTitle').html(msg.SongTitle || '-');
+                    
+                    // Update volume sliders
+                    if (msg.Radiovolume !== undefined) {
+                        var radioVol = Math.round(msg.Radiovolume * 100);
+                        $('#radio-volume').val(radioVol);
+                        $('#radio-volume-display').text(radioVol + '%');
+                    }
+                    if (msg.YTvolume !== undefined) {
+                        var ytVol = Math.round(msg.YTvolume * 100);
+                        $('#yt-volume').val(ytVol);
+                        $('#yt-volume-display').text(ytVol + '%');
+                    }
+                }
+                
+                if (type == 'clientlist') {
+                    var clientTable = document.getElementById("clientlist");
+                    // Clear loading message or reset table before adding clients
+                    if (clientTable.innerHTML.includes('Lade...') || clientTable.innerHTML.includes('fa-spinner')) {
+                        clientTable.innerHTML = "";
+                    }
+                    // Only append if it's actual client data (contains <tr><td>)
+                    if (message.includes('<tr>')) {
+                        clientTable.innerHTML += message + "\n";
+                    }
+                }
+                
+                if (type == 'dashboardlist') {
+                    var dashboardDiv = document.getElementById("dashboardlist");
+                    
+                    if (msg.dashboards && msg.dashboards.length > 0) {
+                        var html = '<div class="info-grid">';
+                        msg.dashboards.forEach(function(dashboard) {
+                            html += '<div class="info-item">';
+                            html += '<i class="fas fa-tv" style="color: #3498db; margin-right: 8px;"></i>';
+                            html += '<strong style="display: inline; color: #ecf0f1;">' + dashboard + '</strong>';
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                        dashboardDiv.innerHTML = html;
+                    } else {
+                        dashboardDiv.innerHTML = '<div class="text-center" style="color: #7f8c8d; padding: 20px;"><i class="fas fa-exclamation-circle"></i> Keine Dashboards verbunden</div>';
+                    }
+                }
+                
+                if (type == 'console') {
+                    LogToConsole("← " + message);
+                }
+                
+                if (type == 'auth') {
+                    // Re-register only, data will be loaded on next update event
+                    var authMsg = { message: '!reg [Adminpanel]' };
+                    websocket.send(JSON.stringify(authMsg));
+                }
+            };
+        }
         
-        websocket.onclose = function (ev) {
-            LogToConsole("✗ WebSocket Verbindung geschlossen");
-            updateWSStatus(false);
-            // Reconnect attempt after 5 seconds
-            setTimeout(function() {
-                LogToConsole("→ Versuche Reconnect...");
-                websocket = new WebSocket(wsUri);
-            }, 5000);
-        };
-
-        // Button handlers
+        // Clean disconnect on page unload
+        window.addEventListener('beforeunload', function() {
+            intentionalClose = true;
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+            }
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.close();
+            }
+        });
+        
+        // Start connection
+        connectWebSocket();
         $('#updatelist').click(function () {
             ListClients();
+        });
+        
+        $('#updatedashboards').click(function () {
+            ListDashboards();
         });
         
         $('#send-btn').click(function () {
@@ -752,98 +842,10 @@
             // Reset after 3 seconds
             setTimeout(function() {
                 $('#spin-icon').hide();
+                // Also refresh dashboards
+                ListDashboards();
                 $('#dice-icon').show();
             }, 3000);
         });
-
-        // WebSocket message handler
-        websocket.onmessage = function (ev) {
-            var msg = JSON.parse(ev.data);
-            var type = msg.type;
-            var message = msg.message;
-
-            if (type == 'update') {
-                updateStatusBadge('Page', msg.Page);
-                updateStatusBadge('FUN', msg.FUN);
-                updateStatusBadge('Cat', msg.Cat);
-                updateStatusBadge('Snow', msg.Snow);
-                updateStatusBadge('BusActive', msg.BusActive);
-                updateStatusBadge('Wheel', msg.Wheel);
-                updateStatusBadge('Cycle', msg.Cycle);
-                updateStatusBadge('CD', msg.CD);
-                updateStatusBadge('Radio', msg.Radio);
-                updateStatusBadge('Radiovolume', msg.Radiovolume);
-                updateStatusBadge('YTvolume', msg.YTvolume);
-                
-                // Update toggle switches - set data flag to prevent triggering change event
-                var updateToggle = function(selector, value) {
-                    var toggle = $(selector);
-                    // Check for various true values: true, 'true', 'True', 1
-                    var isOn = value === true || value === 'true' || value === 'True' || value === 1 || value === '1';
-                    toggle.data('updating', true);
-                    toggle.prop('checked', isOn);
-                    toggle.data('updating', false);
-                    return isOn;
-                };
-                
-                var funOn = updateToggle('#fun-toggle', msg.FUN);
-                var radioOn = updateToggle('#radio-toggle', msg.Radio);
-                var snowOn = updateToggle('#snow-toggle', msg.Snow);
-                var wheelOn = updateToggle('#wheel-toggle', msg.Wheel);
-                var cycleOn = updateToggle('#cycle-toggle', msg.Cycle);
-                
-                // Update status labels
-                $('#fun-status').text(funOn ? 'On' : 'Off');
-                $('#radio-status').text(radioOn ? 'On' : 'Off');
-                $('#snow-status').text(snowOn ? 'On' : 'Off');
-                $('#wheel-status').text(wheelOn ? 'On' : 'Off');
-                $('#cycle-status').text(cycleOn ? 'On' : 'Off');
-                
-                // Show/hide wheel controls based on wheel status
-                if (wheelOn) {
-                    $('#wheel-controls').slideDown();
-                } else {
-                    $('#wheel-controls').slideUp();
-                }
-                
-                $('#Radiostation').html(msg.Radiostation || '-');
-                $('#SongTitle').html(msg.SongTitle || '-');
-                
-                // Update volume sliders
-                if (msg.Radiovolume !== undefined) {
-                    var radioVol = Math.round(msg.Radiovolume * 100);
-                    $('#radio-volume').val(radioVol);
-                    $('#radio-volume-display').text(radioVol + '%');
-                }
-                if (msg.YTvolume !== undefined) {
-                    var ytVol = Math.round(msg.YTvolume * 100);
-                    $('#yt-volume').val(ytVol);
-                    $('#yt-volume-display').text(ytVol + '%');
-                }
-            }
-            
-            if (type == 'clientlist') {
-                if (document.getElementById("clientlist").innerHTML.includes('Lade...')) {
-                    document.getElementById("clientlist").innerHTML = "";
-                }
-                document.getElementById("clientlist").innerHTML += message + "\n";
-            }
-            
-            if (type == 'console') {
-                LogToConsole("← " + message);
-            }
-            
-            if (type == 'auth') {
-                msg = { message: '!reg [Adminpanel]' };
-                websocket.send(JSON.stringify(msg));
-            }
-        };
-
-        // Auto-update client list every 30 seconds
-        window.setInterval(function () {
-            if (websocket && websocket.readyState === WebSocket.OPEN) {
-                ListClients();
-            }
-        }, 30000);
     });
 </script>

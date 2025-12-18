@@ -161,10 +161,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         fclose($sock);
         echo "OK";
     }elseif(isset($_POST["YouTubeURL"])){
-		
 	
-	    $payload = $_POST["YouTubeURL"];
-
+	    // YouTube video with optional Target parameter
+	    $url = $_POST["YouTubeURL"];
+	    $target = isset($_POST["Target"]) ? $_POST["Target"] : null;
+	    
+	    // Build message with target if specified
+	    $videoMessage = $url;
+	    if ($target && !empty($target)) {
+	        $videoMessage .= "|" . $target;
+	    }
 
         $host = '127.0.0.1';
         $port = 9000;
@@ -172,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $json = array(
             "type" => "command",
-            "message" => "!video " . $payload
+            "message" => "!video " . $videoMessage
         );
         $data = json_encode($json);
 

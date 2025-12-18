@@ -24,45 +24,18 @@ $totalPages = ceil($totalCount / $perPage);
     <link rel="stylesheet" type="text/css" href="./css/style.css">
 </head>
 <body>
+
+<?php 
+$active_page = 'youtube';
+$show_ws_status = true;
+$show_reload_btn = true;
+include('navbar.php'); 
+?>
+
 <div class="container-fluid">
-    <div class="row" style="margin-top: 5%">
-        <nav class="navbar navbar-default navbar-fixed-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"><i class="fas fa-tachometer-alt"></i> IT-Dashboard</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li><a href="./history.php"><i class="fas fa-history"></i> History</a></li>
-                        <li><a href="./best.php"><i class="fas fa-star"></i> Best</a></li>
-                        <li class="active"><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
-                        <li><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
-                        <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
-                        <li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
-                        <li><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
-                        <li>
-                            <p class="navbar-text">
-                                <span id="ws-indicator" class="ws-status disconnected"></span>
-                                <span id="ws-status-text" style="color: #e74c3c;">Nicht verbunden</span>
-                            </p>
-                        </li>
-                        <li><p class="navbar-btn"><button class="btn btn-default" id="reload">Reload</button></p></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </div>
     
     <!-- YouTube Control Panel -->
-    <div class="row">
+    <div class="row" style="margin-top: 80px;">
         <div class="col-lg-offset-1 col-lg-10">
             <div class="panel panel-success">
                 <div class="panel-heading">
@@ -70,7 +43,7 @@ $totalPages = ceil($totalCount / $perPage);
                 </div>
                 <div class="panel-body">
                     <div class="row">
-                        <div class="col-md-9">
+                        <div class="col-md-7">
                             <div class="input-group">
                                 <input placeholder="Youtube-URL..." type="text" id="yt-message" class="form-control">
                                 <span class="input-group-btn">
@@ -79,6 +52,11 @@ $totalPages = ceil($totalCount / $perPage);
                             </div>
                         </div>
                         <div class="col-md-3">
+                            <select id="dashboard-select" class="form-control">
+                                <option value="Alle">Alle Dashboards</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <div class="volume-control">
                                 <i class="fas fa-volume-up"></i>
                                 <input id="volume" data-slider-id='volumeSlider' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="14"/>
@@ -186,7 +164,22 @@ $totalPages = ceil($totalCount / $perPage);
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
 <script type="text/javascript" src="../config.js.php"></script>
 <script>
+    var websocket;
     var sliding = false;
+    var reconnectAttempts = 0;
+    var maxReconnectAttempts = 5;
+    var reconnectDelay = 1000;
+    var reconnectTimer = null;
+    var intentionalClose = false;
+    var isConnecting = false;
+    
+    function loadDashboards() {
+        // Request dashboard list via WebSocket
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            var msg = { message: '!dashboardlist' };
+            websocket.send(JSON.stringify(msg));
+        }
+    }
     
     function updateWSStatus(connected) {
         var indicator = document.getElementById('ws-indicator');
@@ -202,6 +195,135 @@ $totalPages = ceil($totalCount / $perPage);
         }
     }
     
+    function connectWebSocket() {
+        // Prevent parallel connection attempts
+        if (isConnecting) {
+            console.log("Connection bereits im Gange, überspringe...");
+            return;
+        }
+        
+        isConnecting = true;
+        
+        // Clear any pending reconnect timer
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        
+        // Close existing websocket if it exists
+        if (websocket) {
+            try {
+                websocket.onclose = null;
+                websocket.onerror = null;
+                websocket.onmessage = null;
+                websocket.onopen = null;
+                websocket.close();
+            } catch (e) {
+                // Ignore close errors
+            }
+        }
+        
+        var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
+        websocket = new WebSocket(wsUri);
+
+        websocket.onopen = function (ev) {
+            updateWSStatus(true);
+            reconnectAttempts = 0;
+            reconnectDelay = 1000;
+            isConnecting = false;
+            
+            // Register and request dashboard list
+            var msg = {
+                message: '!reg [YouTube]'
+            };
+            websocket.send(JSON.stringify(msg));
+            
+            msg = {
+                message: '!dashboardlist'
+            };
+            websocket.send(JSON.stringify(msg));
+        };
+        
+        websocket.onerror = function (ev) {
+            updateWSStatus(false);
+            isConnecting = false;
+        };
+        
+        websocket.onclose = function (ev) {
+            updateWSStatus(false);
+            isConnecting = false;
+            
+            if (intentionalClose) {
+                return;
+            }
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                var delay = reconnectDelay * Math.pow(2, reconnectAttempts - 1);
+                
+                console.log("Reconnecting in " + (delay / 1000) + "s... (Attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+                
+                reconnectTimer = setTimeout(function() {
+                    console.log("Attempting to reconnect...");
+                    connectWebSocket();
+                }, delay);
+            } else {
+                console.log("Max reconnect attempts reached.");
+            }
+        };
+
+        websocket.onmessage = function (ev) {
+            var msg = JSON.parse(ev.data);
+            var type = msg.type;
+            var message = msg.message;
+
+            if (type === 'auth') {
+                // Re-register and request dashboard list
+                var authMsg = {
+                    message: '!reg [YouTube]'
+                };
+                websocket.send(JSON.stringify(authMsg));
+                
+                var listMsg = {
+                    message: '!dashboardlist'
+                };
+                websocket.send(JSON.stringify(listMsg));
+            }
+            if(type === 'update'){
+                if (!sliding) {
+                    $('#volume').slider('setValue', msg.YTvolume * 100)
+                }
+            }
+            if (type === 'dashboardlist') {
+                // Update dashboard dropdown
+                var select = $('#dashboard-select');
+                // Clear all except "Alle"
+                select.find('option:not([value="Alle"])').remove();
+                
+                // Add each dashboard
+                if (msg.dashboards && msg.dashboards.length > 0) {
+                    msg.dashboards.forEach(function(dashboard) {
+                        select.append($('<option></option>').attr('value', dashboard).text(dashboard));
+                    });
+                }
+                
+                // Restore last selection from localStorage
+                var lastTarget = localStorage.getItem('lastDashboardTarget');
+                if (lastTarget) {
+                    select.val(lastTarget);
+                }
+            }
+        };
+    }
+    
+    // Clean disconnect on page unload
+    window.addEventListener('beforeunload', function() {
+        intentionalClose = true;
+        if (websocket) {
+            websocket.close();
+        }
+    });
+    
     $('#reload').click(function () {
         $.ajax({
             url: 'api.php',
@@ -216,8 +338,13 @@ $totalPages = ceil($totalCount / $perPage);
     $('#yt-btn').click(function () {
         var mymessage = $('#yt-message').val();
         $('#yt-message').val("");
+        var target = $('#dashboard-select').val();
+        
+        // Save last selection to localStorage
+        localStorage.setItem('lastDashboardTarget', target);
+        
         var msg = {
-            message: '!video ' + mymessage
+            message: '!video ' + mymessage + '|' + target
         };
         websocket.send(JSON.stringify(msg));
     });
@@ -237,50 +364,21 @@ $totalPages = ceil($totalCount / $perPage);
             sliding = true;
         });
         
-        var wsUri = DASHBOARD_CONFIG.WEBSOCKET_URL;
-        websocket = new WebSocket(wsUri);
-
-        websocket.onopen = function (ev) {
-            updateWSStatus(true);
-            msg = {
-                message: '!reg [YouTube]'
-            };
-            websocket.send(JSON.stringify(msg));
-        };
-        
-        websocket.onerror = function (ev) {
-            updateWSStatus(false);
-        };
-        
-        websocket.onclose = function (ev) {
-            updateWSStatus(false);
-        };
+        // Initialize WebSocket connection
+        connectWebSocket();
         
         $('.repeat').click(function () {
             yturl = $(this).attr('yturl');
+            var target = $('#dashboard-select').val();
+            
+            // Save last selection to localStorage
+            localStorage.setItem('lastDashboardTarget', target);
+            
             var msg = {
-                message: '!video ' + yturl.replace(/(\r\n\t|\n|\r\t)/gm,"")
+                message: '!video ' + yturl.replace(/(\r\n\t|\n|\r\t)/gm,"") + '|' + target
             };
             websocket.send(JSON.stringify(msg));
         });
-
-        websocket.onmessage = function (ev) {
-            var msg = JSON.parse(ev.data);
-            var type = msg.type;
-            var message = msg.message;
-
-            if (type === 'auth') {
-                msg = {
-                    message: '!reg [YouTube]'
-                };
-                websocket.send(JSON.stringify(msg));
-            }
-            if(type === 'update'){
-                if (!sliding) {
-                    $('#volume').slider('setValue', msg.YTvolume * 100)
-                }
-            }
-        };
     });
 </script>
 </body>

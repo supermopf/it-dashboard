@@ -27,36 +27,15 @@ $totalPages = ceil($totalCount / $perPage);
     </style>
 </head>
 <body>
+
+<?php 
+$active_page = 'history';
+$show_reload_btn = true;
+include('navbar.php'); 
+?>
+
 <div class="container-fluid">
-    <div class="row" style="margin-top: 0">
-        <nav class="navbar navbar-default navbar-fixed-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"><i class="fas fa-tachometer-alt"></i> IT-Dashboard</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li class="active"><a href="./history.php"><i class="fas fa-history"></i> History</a></li>
-                        <li><a href="./best.php"><i class="fas fa-star"></i> Best</a></li>
-                        <li><a href="./youtube.php"><i class="fab fa-youtube"></i> YouTube</a></li>
-                        <li><a href="./index.php"><i class="fas fa-cog"></i> Adminpanel</a></li>
-                        <li><a href="./features.php"><i class="fas fa-lightbulb"></i> Feature Request</a></li>
-                        <li><a href="./julianometer.php"><i class="fas fa-chart-line"></i> Julian-O-Meter</a></li>
-                        <li><a href="./newtoast.php"><i class="fas fa-bell"></i> Neuer Toast</a></li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right" style="margin-right: 1%;">
-                        <li><p class="navbar-btn"><button class="btn btn-default" id="reload">Reload</button></p></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </div>
+    <div class="row" style="margin-top: 80px;">
     
     <div class="row" style="margin-top: 5%;">
         <div class="col-lg-12">
