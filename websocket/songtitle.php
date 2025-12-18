@@ -490,7 +490,7 @@ try {
             error_log("[SongTitle] Received radio station URL: $radiostationUrl");
         }
     }
-    fclose($sock);
+    // Don't close socket yet - we'll reuse it to send the song title
 
     if (!$radiostationUrl) {
         error_log("[SongTitle] WARNING: No radio station URL received from WebSocket");
@@ -533,7 +533,7 @@ try {
         }
     }
 
-    // Send song title back to WebSocket server
+    // Send song title back to WebSocket server (reuse existing connection)
     error_log("[SongTitle] Preparing to send song title to WebSocket: " . ($songTitle ?: "(empty)"));
     
     $messageData = [
@@ -543,7 +543,11 @@ try {
     
     error_log("[SongTitle] Message to send: " . json_encode($messageData));
     
-    sendWebSocketMessage($host, $port, $origin, $messageData);
+    // Reuse the connection we opened earlier
+    $encoded = hybi10Encode(json_encode($messageData));
+    fwrite($sock, $encoded);
+    fread($sock, 2000); // Read confirmation
+    fclose($sock); // Now close it
     
     error_log("[SongTitle] Script completed successfully");
 
