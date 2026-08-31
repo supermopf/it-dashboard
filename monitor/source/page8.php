@@ -37,7 +37,8 @@ if ($conn) {
     //Haben wir Kontakt?
     foreach ($Wellen_Conf as $ConfItem) {
         // Get LIST
-        if ($result = sqlsrv_query($conn, "SELECT TOP 10 comp.Name0 As 'Name', count(comp.Name0) AS NumberOfMissingUpdates
+        if ($result = sqlsrv_query($conn, "
+        SELECT TOP 250 comp.Name0 As 'Name', count(comp.Name0) AS NumberOfMissingUpdates
         from v_R_System comp,v_Update_ComplianceStatus stat,v_UpdateInfo upinfo,v_FullCollectionMembership coll
         where 
             comp.ResourceID = stat.ResourceID AND
@@ -52,20 +53,21 @@ if ($conn) {
             500			3			Update is installed
             */
             stat.Status = 2 AND
-            upInfo.ArticleID != 'NULL' AND 
-            comp.Operating_System_Name_and0 LIKE '%Server%' AND
+            --upInfo.ArticleID != 'NULL' AND 
+            --comp.Operating_System_Name_and0 LIKE '%Server%' AND
             /*
             00100016	Server Welle 1
             00100180	Server Welle 2 (for Deployment only)
             00100142	Server Welle 3
             */
-            (coll.CollectionID = '" . $ConfItem["ID"] . "' )AND
+            (coll.CollectionID = '" . $ConfItem["ID"] . "') AND
             upinfo.IsSuperseded = 0 AND
             upinfo.IsDeployed = 1 AND
             upinfo.IsExpired = 0 AND
-            upinfo.Title LIKE '%Security%'
+            upinfo.Severity > 0
         GROUP BY comp.Name0
-        ORDER BY NumberOfMissingUpdates DESC")) {
+        ORDER BY NumberOfMissingUpdates DESC, Name
+        ")) {
             $WellenData[$ConfItem["Prop"]] = array();
             while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
                 array_push($WellenData[$ConfItem["Prop"]], $row);

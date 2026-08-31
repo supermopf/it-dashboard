@@ -19,7 +19,35 @@ if ($conn) {
         echo "<pre>";
         die(print_r(sqlsrv_errors(), true));
     }
-    if ($result = sqlsrv_query($conn, "SELECT DISTINCT [name],[objectType],[location],[lastSnapshot],[pullTime],[slaDomainName] FROM [IT-Dashboard].[dbo].[IT-Dashboard_Backup_Failed] WHERE [pullTime] > DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),0)")) {
+    if ($result = sqlsrv_query($conn, "
+WITH LatestPerFid
+AS (
+    SELECT [name]
+        ,[objectType]
+        ,[location]
+        ,[lastSnapshot]
+        ,[pullTime]
+        ,[slaDomainName]
+        ,[fid]
+        ,ROW_NUMBER() OVER (
+            PARTITION BY [fid] ORDER BY [pullTime] DESC
+            ) AS rn
+    FROM dbo.[IT-Dashboard_Backup_Failed]
+    )
+SELECT [name]
+    ,[objectType]
+    ,[location]
+    ,[lastSnapshot]
+    ,[pullTime]
+    ,[slaDomainName]
+FROM LatestPerFid
+WHERE rn = 1
+    AND pullTime > CONVERT(DATE, GETDATE())
+ORDER BY pullTime DESC
+    ,[location]
+    ,name
+    ,lastSnapshot DESC
+    ")) {
         $Failed = array();
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
             array_push($Failed, $row);

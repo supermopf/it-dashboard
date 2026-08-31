@@ -175,7 +175,7 @@ order by referencenumber desc
         <div class="card">
             <div class="card-header">
                 <div class="card-title">
-                    <div class="title">Infotisch</div>
+                    <div class="title">Infotisch - offene Tickets nach Zuordnung und Zeit</div>
                 </div>
             </div>
             <div class="card-body no-padding">
