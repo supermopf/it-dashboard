@@ -6,6 +6,7 @@
  * Time: 12:41
  */
 require('../config.php');
+$conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 $root = DASHBOARD_BASE_URL . "/monitor/source/";
 $cacheroot = dirname(__FILE__) . "/cache/";
@@ -27,12 +28,8 @@ $pages = array(
 $pageStatus = array();
 
 // Function to check if a page has data
-function checkPageHasData($pageNumber) {
-    $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, array(
-        "Database" => "IT-Dashboard",
-        "UID" => DASHBOARD_SQL_USERNAME,
-        "PWD" => DASHBOARD_SQL_PASSWORD
-    ));
+function checkPageHasData($pageNumber) {    
+    global $conn;
     
     switch ($pageNumber) {
         case 1: // Temperature - Always show (informational data)
@@ -52,10 +49,8 @@ function checkPageHasData($pageNumber) {
                 ");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    sqlsrv_close($conn);
                     return $row['count'] > 0; // High CPU/RAM = Warning
                 }
-                sqlsrv_close($conn);
             }
             return false;
         
@@ -69,10 +64,8 @@ function checkPageHasData($pageNumber) {
                 ");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    sqlsrv_close($conn);
                     return $row['count'] > 0; // High CPU/RAM = Warning
                 }
-                sqlsrv_close($conn);
             }
             return false;
         
@@ -81,10 +74,8 @@ function checkPageHasData($pageNumber) {
                 $result = sqlsrv_query($conn, "SELECT COUNT(*) as count FROM [IT-Dashboard].[dbo].[IT-Dashboard_SCOM_Criticals]");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    sqlsrv_close($conn);
                     return $row['count'] > 0; // Alerts exist = Warning
                 }
-                sqlsrv_close($conn);
             }
             return false;
         
@@ -97,10 +88,8 @@ function checkPageHasData($pageNumber) {
                 ");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    sqlsrv_close($conn);
                     return $row['count'] > 0; // Failed backups = Warning
                 }
-                sqlsrv_close($conn);
             }
             return false;
         
@@ -143,10 +132,8 @@ function checkPageHasData($pageNumber) {
                 ");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    sqlsrv_close($conn);
                     return $row['count'] > 0; // Has entries this month
                 }
-                sqlsrv_close($conn);
             }
             return false;
         
@@ -174,6 +161,8 @@ foreach ($pages as $page) {
         echo "Page $pageNumber: " . ($hasData ? "ACTIVE (show page)" : "EMPTY (skip page)") . "\n";
     }
 }
+
+sqlsrv_close($conn);
 
 // Write page status to JSON file
 $statusFile = dirname(__FILE__) . "/cache/page_status.json";
