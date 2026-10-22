@@ -1,6 +1,34 @@
 <?php
+function WriteWebSocketLog($logLine)
+{
+    $logPath = __DIR__ . '/logs/websocket.log';
+    $maxSize = 10 * 1024 * 1024;
+    $maxArchives = 5;
+
+    clearstatcache(true, $logPath);
+    if (is_file($logPath) && filesize($logPath) + strlen($logLine) > $maxSize) {
+        for ($index = $maxArchives; $index >= 1; $index--) {
+            $source = $index === 1 ? $logPath : $logPath . '.' . ($index - 1);
+            $archive = $logPath . '.' . $index;
+
+            if (is_file($archive)) {
+                @unlink($archive);
+            }
+            if (is_file($source)) {
+                @rename($source, $archive);
+            }
+        }
+    }
+
+    @file_put_contents($logPath, $logLine, FILE_APPEND | LOCK_EX);
+}
+
 // Global error and exception handlers for comprehensive logging
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) {
+        return true;
+    }
+
     $errorType = '';
     switch ($errno) {
         case E_ERROR: $errorType = 'E_ERROR'; break;
@@ -11,7 +39,7 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
     }
     $logLine = date("Y-m-d H:i:s") . " [$errorType] $errstr in $errfile:$errline" . PHP_EOL;
     echo $logLine;
-    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+    WriteWebSocketLog($logLine);
     return false; // Let PHP handle it normally too
 });
 
@@ -20,7 +48,7 @@ set_exception_handler(function($exception) {
                " in " . $exception->getFile() . ":" . $exception->getLine() . PHP_EOL;
     $logLine .= "Stack trace:" . PHP_EOL . $exception->getTraceAsString() . PHP_EOL;
     echo $logLine;
-    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+    WriteWebSocketLog($logLine);
 });
 
 register_shutdown_function(function() {
@@ -29,7 +57,7 @@ register_shutdown_function(function() {
         $logLine = date("Y-m-d H:i:s") . " [FATAL ERROR] " . $error['message'] . 
                    " in " . $error['file'] . ":" . $error['line'] . PHP_EOL;
         echo $logLine;
-        @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+        WriteWebSocketLog($logLine);
     }
 });
 
@@ -45,8 +73,8 @@ $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 //reuseable port
 socket_set_option($socket, SOL_SOCKET, SO_REUSEADDR, 1);
 
-//bind socket to specified host
-socket_bind($socket, 0, $port);
+//bind socket on all network interfaces
+socket_bind($socket, '0.0.0.0', (int)$port);
 
 //listen to port
 socket_listen($socket);
@@ -108,7 +136,7 @@ function LogDebug($message, $LogLevel = 3)
         if (DebugLogLevel >= $LogLevel) {
             $logLine = date("Y-m-d H:i:s") . " [DEBUG] " . $message . PHP_EOL;
             echo $logLine;
-            @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+            WriteWebSocketLog($logLine);
         }
     }
 }
@@ -124,7 +152,7 @@ function LogNormal($message)
     
     $logLine = date("Y-m-d H:i:s") . " " . $message . PHP_EOL;
     echo $logLine;
-    @file_put_contents(__DIR__ . '/logs/websocket.log', $logLine, FILE_APPEND);
+    WriteWebSocketLog($logLine);
 }
 
 function LoadPageStatus() {
@@ -158,7 +186,7 @@ while (true) {
         
         // Filter out invalid sockets before socket_select
         $changed = array_filter($changed, function($client) {
-            return is_resource($client) && get_resource_type($client) === 'Socket';
+            return $client instanceof \Socket || (is_resource($client) && get_resource_type($client) === 'Socket');
         });
         
         if (empty($changed)) {
@@ -401,7 +429,7 @@ while (true) {
                     $split = explode(" ", $user_message, 2);
                     if (isset($split[1]) && !empty(trim($split[1]))) {
                         $dashboardName = trim($split[1]);
-                        $resourceId = (int)$changed_socket;
+                        $resourceId = is_object($changed_socket) ? spl_object_id($changed_socket) : (int)$changed_socket;
                         $dashboards[$resourceId] = array('socket' => $changed_socket, 'name' => $dashboardName);
                         
                         if (socket_getpeername($changed_socket, $ip, $port)) {
@@ -584,7 +612,7 @@ while (true) {
             }
             
             // Remove from dashboard registry if registered
-            $resourceId = (int)$changed_socket;
+            $resourceId = is_object($changed_socket) ? spl_object_id($changed_socket) : (int)$changed_socket;
             if (isset($dashboards[$resourceId])) {
                 $dashboardName = $dashboards[$resourceId]['name'];
                 unset($dashboards[$resourceId]);
@@ -642,7 +670,7 @@ function send_message($msg, $target = "Alle")
         $sentCount = 0;
         foreach ($dashboards as $entry) {
             $socket = $entry['socket'];
-            if (is_resource($socket)) {
+            if ($socket instanceof \Socket || is_resource($socket)) {
                 @socket_write($socket, $msg, strlen($msg));
                 $sentCount++;
             }
@@ -651,17 +679,17 @@ function send_message($msg, $target = "Alle")
         // Also send to non-dashboard clients (for backward compatibility with control, admin, etc.)
         $dashboardSockets = array();
         foreach ($dashboards as $entry) {
-            $dashboardSockets[] = (int)$entry['socket'];
+            $dashboardSockets[] = is_object($entry['socket']) ? spl_object_id($entry['socket']) : (int)$entry['socket'];
         }
         
         foreach ($clients as $changed_socket) {
             if ($changed_socket === $clients[0]) continue; // Skip listening socket
             
             // Skip if already sent (is a registered dashboard)
-            $resourceId = (int)$changed_socket;
+            $resourceId = is_object($changed_socket) ? spl_object_id($changed_socket) : (int)$changed_socket;
             if (in_array($resourceId, $dashboardSockets)) continue;
             
-            if (is_resource($changed_socket)) {
+            if ($changed_socket instanceof \Socket || is_resource($changed_socket)) {
                 @socket_write($changed_socket, $msg, strlen($msg));
                 $sentCount++;
             }
@@ -676,7 +704,7 @@ function send_message($msg, $target = "Alle")
     foreach ($dashboards as $entry) {
         if ($entry['name'] === $target) {
             $socket = $entry['socket'];
-            if (is_resource($socket)) {
+            if ($socket instanceof \Socket || is_resource($socket)) {
                 @socket_write($socket, $msg, strlen($msg));
                 $sentCount++;
             }

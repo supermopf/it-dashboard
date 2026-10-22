@@ -21,3 +21,17 @@ radar.png
 /monitor/cache/page10.php
 /monitor/cache/page11.php
 /monitor/cache/page12.php
+/monitor/cache/page_status.json
+*.mp3
+*.mp4
+*.bat
+*.sh
+*.pem
+*.jpg
+*.png
+*.gif
+*.svg
+*.webp
+*.wav
+*.log
+*.db
