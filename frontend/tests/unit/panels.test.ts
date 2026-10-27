@@ -134,7 +134,7 @@ describe('FragmentPanel (Legacy-Ansichten)', () => {
     document.body.replaceChildren();
   });
 
-  it('führt Skripte mehrfach aus, ohne const-Redeklarationsfehler (AUDIT P4)', async () => {
+  it('führt Skripte mehrfach aus (const in eigenem Scope, keine globalen Lecks)', async () => {
     const legacy = fakeLegacy();
     const ctx = makeCtx();
     for (let round = 0; round < 3; round++) {

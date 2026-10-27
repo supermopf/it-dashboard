@@ -24,7 +24,7 @@ test.describe('Rotation und Lebenszyklus', () => {
     // Chart.js 2.3 legt pro responsivem Diagramm ein Resize-iFrame an: nur die der aktiven Seite dürfen existieren.
     expect(await page.locator('iframe').count()).toBeLessThanOrEqual(s.charts);
     expect(errors).toEqual([]);
-    // Seite 3 erneut: Charts müssen gezeichnet werden (Legacy: const-Redeklaration, AUDIT P4)
+    // Seite 3 erneut: alle 12 Charts neu gezeichnet, die alten zerstört
     await showPage(page, '3');
     expect((await appStats(page)).charts).toBe(12);
   });

@@ -98,7 +98,7 @@ Datenfelder). Das `FragmentPanel` macht sie dauerbetriebstauglich:
 
 | Problem im Altbestand | Lösung |
 |---|---|
-| Inline-Skripte global ausgeführt, `const`-Redeklaration beim 2. Besuch (AUDIT P4) | alle Skripte einer Ansicht in **einem Funktions-Scope** (`new Function`) |
+| Inline-Skripte global ausgeführt (`var`-Lecks), alle Diagramme in einem Task (AUDIT P4) | alle Skripte einer Ansicht in **einem Funktions-Scope** (async `Function`), je Skript ein eigener Task (Yield per `MessageChannel`), Abbruch, wenn die Ansicht inzwischen zerstört wurde; ein fehlerhaftes Skript stoppt die übrigen nicht |
 | Chart-Instanzen nie zerstört, `Chart.instances` wächst, Resize-iFrames bleiben (P1/P2) | `destroy()` aller Charts der Ansicht beim Verlassen |
 | `pluginService.register` bei jedem Besuch (P3) | Registrierung dedupliziert |
 | 1 s Chart-Animationen + animate.css-Bounce beim Wechsel (P5) | Chart-Animation aus, kurzer Crossfade |
