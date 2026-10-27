@@ -11,6 +11,7 @@
 
 //Weil SQL Kacka ist
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 date_default_timezone_set('UTC');
 $serverName = DERDACK_SQL_INSTANCE;
 $connectionInfo = array("Database" => DERDACK_SQL_DATABASE, "CharacterSet" => "UTF-8");
@@ -55,14 +56,14 @@ for ($i = 0; $i <= $count; $i++) {
     echo '<div class="card-header bg-danger min-height-header">';
     echo '<div class="card-title">';
     echo '<div class="title text-center">';
-    echo '<div class="col-sm-12">' . $array[$i]["Subject"] . '</div>';
+    echo '<div class="col-sm-12">' . h($array[$i]["Subject"]) . '</div>';
     echo '</div>';
     echo '</div>';
     echo '</div>';
     echo '<div class="card-body">';
     echo '<div class="card-text">';
     echo "<div class='min-height-text'>";
-    echo "<p>" . $array[$i]["AlertText"] . "</p>";
+    echo "<p>" . nl2br(h($array[$i]["AlertText"])) . "</p>";
     echo "</div>";
     echo '<hr class="half-rule"/>';
     echo "<div>";
@@ -70,7 +71,7 @@ for ($i = 0; $i <= $count; $i++) {
     echo "<span class='pull-left'>" . $array[$i]["TimeStamp"]->format('d.m.Y H:i') . "</span>";
     echo '</div>';
     echo "<div class='col-sm'>";
-    echo "<span class='pull-right'>Quittiert von: " . $array[$i]["DisplayName"] . "</span>";
+    echo "<span class='pull-right'>Quittiert von: " . h($array[$i]["DisplayName"]) . "</span>";
     echo '</div>';
     echo '</div>';
     echo '</div>';

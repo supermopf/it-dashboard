@@ -142,7 +142,7 @@ spielt Sound, zeigt Bootstrap-Modal, schließt nach `ToastTime` (Default 30 000 
 | P25 | `app.js` gesamt | Kein Heartbeat/Watchdog: halb-offene TCP-Verbindungen (z. B. nach Proxy-Timeout) werden nie erkannt. | **hoch** | Watchdog: kein `update` > 10 s → Reconnect. | – |
 | P26 | `app.js:186-191`, `control/app.js:356-363` | Control-Seite: `onerror`/`onclose` → **sofortiges `location.reload()` ohne Backoff** → Reload-Schleife, solange der Server nicht erreichbar ist. | **hoch** | Backoff-Reconnect. | – |
 | P27 | `app.js:45`, `cache/pageWHEEL.php` | WHEEL-Seite bindet `wheel.css` und `wheel.js` bei jedem Aufruf neu ein (zusätzlicher Request, neues Closure). | **niedrig** | Nativ im App-Bundle. | – |
-| P28 | `wheel.js:131-134` mit `server.php:481-483` | Server würfelt `rand(1,20)`, das Rad erwartet 0-basierte Indizes 0…19 (je 20 Einträge, `WheelOfFortune.json`). Index 20 → `return` **ohne Callback** → `isSpinning` bleibt `true`, das Rad reagiert bis zum nächsten Laden nicht mehr (Wahrscheinlichkeit je Spin ≈ 14 %); Index 0 wird nie gewählt. | **mittel** (Funktionsfehler) | Client interpretiert Werte als 1-basiert (`roll-1`) und begrenzt sie. | Verhaltensänderung (Fix) |
+| P28 | `wheel.js:133-136` mit `server.php:481-483` | Server würfelt `rand(1,20)`, das Rad erwartet 0-basierte Indizes 0…19 (je 20 Einträge, `WheelOfFortune.json`). Index 20 → `return` **ohne Callback** → `isSpinning` bleibt `true`, das Rad reagiert bis zum nächsten Laden nicht mehr (Wahrscheinlichkeit je Spin ≈ 14 %); Index 0 wird nie gewählt. | **mittel** (Funktionsfehler) | Client interpretiert Werte als 1-basiert (`roll-1`) und begrenzt sie. | Verhaltensänderung (Fix) |
 | P29 | `index.html`, `monitor/index.php:7`, Meta-Tags | Diverse `no-cache`-Meta-Tags ohne Wirkung auf HTTP-Caching. | **niedrig** | Echte HTTP-Header. | – |
 
 ### 3.2 Backend / WebSocket-Server
@@ -214,7 +214,7 @@ Dateien enthalten keine Passwörter oder API-Keys (Template mit leeren Werten). 
 6. **`Cat` bei Seite 9** (`app.js:382-383`): zeigt statt Tier den Bus (`bus.gif`) – Sinn unklar, bewahrt.
 7. **SCOM-Slider** (P22): ob die Rotation absichtlich deaktiviert wurde, ist nicht erkennbar. Wird im Refactoring für die Seite aktiviert, die Slider enthält (dokumentierte Verhaltensänderung).
 8. **Glücksrad-Indizes** (P28): Absicht 0- oder 1-basiert unklar; der Fehler (Rad blockiert) ist eindeutig.
-9. **`page5.php:73`**: String-Konkatenation endet mit `'<span class="pull-right">' .` und hängt den Rückgabewert von `$objects++` an; `$time` (80) ist undefiniert. Ausgabe vermutlich „Objektzähler“ statt Zeit – unklar, bewahrt.
+9. **`page5.php:73,78-81`**: `$Value["LastTimeModified"]` wird per String-Konkatenation ausgegeben. Liefert `sqlsrv` ein `DateTime` (Standard ohne `ReturnDatesAsStrings`), wirft PHP 8 beim Konkatenieren einen Fehler; `$time` (80) ist undefiniert. Ob die Seite in Produktion Einträge korrekt rendert, hängt von der echten Verbindungskonfiguration ab – nicht verifizierbar, Verhalten bewahrt. Ausgabe wird nur escaped (`h()` formatiert `DateTime` als `d.m.Y H:i`).
 10. **`workmode.php:126`**: leitet nach 1 h auf `/control` um statt sich selbst zu aktualisieren.
 11. **`history.php:157`, `best.php:122`**: rufen nicht existierende `best_new.php` auf → Favoriten speichern/löschen defekt.
 12. **`features.php:147`, `julianometer.php:117`**: „Reload All“ ruft undefiniertes `clean()` auf → defekt.

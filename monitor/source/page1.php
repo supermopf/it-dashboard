@@ -9,6 +9,7 @@
 //Temperaturen
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if( $conn ) {
@@ -57,11 +58,11 @@ $Locations = array(
         <div class="row">
             <div class="card yellow summary-inline">
                 <div class="card-body">
-                    <img height="128px" src="<?= "./img/weather/" . $oIsernhagen->weather[0]->icon . ".png" ?>"/>
+                    <img height="128px" src="<?= h("./img/weather/" . preg_replace('/[^a-z0-9]/i', '', (string)$oIsernhagen->weather[0]->icon) . ".png") ?>"/>
                     <div class="content">
-                        <div class="title"><?= $oIsernhagen->name ?>: <?= number_format(round(($oIsernhagen->main->temp - 273.15), 1), 1, ",", ".") ?> °C
+                        <div class="title"><?= h($oIsernhagen->name) ?>: <?= number_format(round(($oIsernhagen->main->temp - 273.15), 1), 1, ",", ".") ?> °C
                         </div>
-                        <div class="title"><?= $oIsernhagen->weather[0]->description ?></div>
+                        <div class="title"><?= h($oIsernhagen->weather[0]->description) ?></div>
                     </div>
                     <div class="clear-both"></div>
                 </div>

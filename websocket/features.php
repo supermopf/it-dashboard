@@ -1,29 +1,27 @@
 <?php
-require("../config.php");
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
+require_once(__DIR__ . '/../lib/security.php');
+require_admin_access();
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
     if(isset($_POST["Feature"]) && $_POST["Feature"] != ""){
-        $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Features]([FeatureRequest],[State]) VALUES ('".$_POST["Feature"]."','Offen')";
-        if(sqlsrv_query($conn, $sql)){
+        // Parametrisiert statt String-Konkatenation (AUDIT X4)
+        $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Features]([FeatureRequest],[State]) VALUES (?,'Offen')";
+        if(sqlsrv_query($conn, $sql, array(mb_substr((string)$_POST["Feature"], 0, 4000)))){
         }else {
             echo "<pre>";
             die(print_r(sqlsrv_errors(), true));
         }
     }
     if(isset($_POST["action"]) && isset($_POST["ID"])){
-        switch ($_POST['action']){
-            case 'close':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'Abgeschlossen' WHERE [ID] = ".$_POST['ID'];
-                break;
-            case 'inprogress':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'In Bearbeitung' WHERE [ID] = ".$_POST['ID'];
-                break;
-            case 'abort':
-                $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = 'Abgebrochen' WHERE [ID] = ".$_POST['ID'];
-                break;
+        $states = array('close' => 'Abgeschlossen', 'inprogress' => 'In Bearbeitung', 'abort' => 'Abgebrochen');
+        if (!isset($states[$_POST['action']]) || !ctype_digit((string)$_POST['ID'])) {
+            http_response_code(400);
+            die('Ungültige Anfrage');
         }
-        if(sqlsrv_query($conn, $sql)){
+        $sql = "UPDATE [dbo].[IT-Dashboard_Features] SET [State] = ? WHERE [ID] = ?";
+        if(sqlsrv_query($conn, $sql, array($states[$_POST['action']], (int)$_POST['ID']))){
         }else {
             echo "<pre>";
             die(print_r(sqlsrv_errors(), true));

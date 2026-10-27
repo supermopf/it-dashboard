@@ -9,6 +9,7 @@
 // Normal Performance
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
@@ -80,12 +81,12 @@ ORDER BY pullTime DESC
             <?php
             foreach ($Failed as $item) {
                 echo "<tr>";
-                echo "<td class='h4'>" . $item["objectType"] . "</td>";
-                echo "<td class='h4'>" . $item["name"] . "</td>";
-                echo "<td class='h4'>" . $item["location"] . "</td>";
+                echo "<td class='h4'>" . h($item["objectType"]) . "</td>";
+                echo "<td class='h4'>" . h($item["name"]) . "</td>";
+                echo "<td class='h4'>" . h($item["location"]) . "</td>";
                 echo "<td class='h4'>" . date_format($item["lastSnapshot"], 'd.m.Y H:i') . "</td>";
                 echo "<td class='h4'>" . date_format($item["pullTime"], 'd.m.Y H:i') . "</td>";
-				echo "<td class='h4'>" . $item["slaDomainName"] . "</td>";
+				echo "<td class='h4'>" . h($item["slaDomainName"]) . "</td>";
                 echo "</tr>";
             }
             ?>

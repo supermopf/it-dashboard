@@ -5,7 +5,7 @@
  * Date: 07.03.2018
  * Time: 12:41
  */
-require('../config.php');
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 $root = DASHBOARD_BASE_URL . "/monitor/source/";
@@ -143,12 +143,59 @@ function checkPageHasData($pageNumber) {
     }
 }
 
-foreach ($pages as $page) {
-    $content = file_get_contents($root . $page);
+/**
+ * Erkennt Fehlerausgaben der Quellseiten (die(print_r(sqlsrv_errors())), PHP-Fatal-Errors).
+ * Gleiche Regeln wie das Frontend (frontend/src/core/view-cache.ts, looksInvalid).
+ */
+function renderLooksInvalid($html)
+{
+    $t = trim((string)$html);
+    if ($t === '') {
+        return 'leer';
+    }
+    if (preg_match('/^<pre>\s*Array\s*\(/i', $t) || preg_match('/\[SQLSTATE\]\s*=>/i', $t)) {
+        return 'Datenbankfehler';
+    }
+    if (preg_match('/<b>(Fatal error|Parse error)<\/b>:/i', $t) || preg_match('/^(PHP )?Fatal error:/im', $t)) {
+        return 'PHP-Fehler';
+    }
+    return null;
+}
 
-    echo "Writing " . $cacheroot . $page . "\n";
-    file_put_contents($cacheroot . $page, $content);
-    
+/** Atomar schreiben: Clients lesen nie eine halb geschriebene Datei. */
+function writeAtomic($file, $content)
+{
+    $tmp = $file . '.tmp';
+    if (file_put_contents($tmp, $content, LOCK_EX) === false) {
+        return false;
+    }
+    if (!@rename($tmp, $file)) {
+        // Windows: rename über bestehende Datei kann bei geöffnetem Handle scheitern → Fallback.
+        $ok = @copy($tmp, $file);
+        @unlink($tmp);
+        return $ok;
+    }
+    return true;
+}
+
+$renderCtx = stream_context_create(array('http' => array('timeout' => 60, 'ignore_errors' => true)));
+
+foreach ($pages as $page) {
+    $content = @file_get_contents($root . $page, false, $renderCtx);
+    $httpStatus = 0;
+    if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m)) {
+        $httpStatus = (int)$m[1];
+    }
+
+    $invalid = $content === false ? 'nicht abrufbar' : ($httpStatus !== 200 ? 'HTTP ' . $httpStatus : renderLooksInvalid($content));
+    if ($invalid !== null) {
+        // Letzte gültige Version behalten (AUDIT S11/S13).
+        echo "SKIP " . $cacheroot . $page . " ($invalid) – vorherige Version bleibt erhalten\n";
+    } else {
+        echo "Writing " . $cacheroot . $page . "\n";
+        writeAtomic($cacheroot . $page, $content);
+    }
+
     // Extract page number from filename (e.g., "page5.php" -> 5)
     preg_match('/page(\d+)\.php/', $page, $matches);
     if (isset($matches[1])) {
@@ -166,5 +213,5 @@ sqlsrv_close($conn);
 
 // Write page status to JSON file
 $statusFile = dirname(__FILE__) . "/cache/page_status.json";
-file_put_contents($statusFile, json_encode($pageStatus, JSON_PRETTY_PRINT));
+writeAtomic($statusFile, json_encode($pageStatus, JSON_PRETTY_PRINT));
 echo "\nPage status written to: $statusFile\n";

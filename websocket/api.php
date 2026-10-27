@@ -5,8 +5,62 @@
  * Date: 18.07.2018
  * Time: 13:30
  */
-require('../config.php');
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
+require_once __DIR__ . '/../lib/security.php';
+require_once __DIR__ . '/lib/api_validation.php';
 set_time_limit(30);
+send_security_headers("default-src 'self'; style-src 'self'; frame-ancestors 'self'");
+
+/** Antwort mit Statuscode; Body bleibt für Erfolg „OK“ (kompatibel zu bestehenden Aufrufern). */
+function api_respond(int $status, string $text): void
+{
+    http_response_code($status);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo $text;
+    exit;
+}
+
+/** Nachricht an den lokalen WebSocket-Server übergeben. */
+function api_send_ws(string $message): void
+{
+    $host = '127.0.0.1';
+    $port = defined('WEBSOCKET_PORT') ? (int)WEBSOCKET_PORT : 9000;
+    $local = DASHBOARD_BASE_URL . "/monitor/";
+    $data = json_encode(array("type" => "command", "message" => $message));
+    $head = "GET / HTTP/1.1\r\n" .
+        "Upgrade: WebSocket\r\n" .
+        "Connection: Upgrade\r\n" .
+        "Origin: $local\r\n" .
+        "Host: $host\r\n" .
+        "Sec-WebSocket-Key: " . base64_encode(random_bytes(16)) . "\r\n" .
+        "Content-Length: " . strlen($data) . "\r\n\r\n";
+    $sock = @fsockopen($host, $port, $errno, $errstr, 2);
+    if ($sock === false) {
+        api_respond(503, 'WebSocket-Server nicht erreichbar');
+    }
+    stream_set_timeout($sock, 3);
+    fwrite($sock, $head);
+    fread($sock, 2000);
+    fwrite($sock, hybi10Encode($data));
+    fclose($sock);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Optionaler API-Schlüssel für externe Aufrufer; Admin-Seiten (Same-Origin) brauchen ihn nicht.
+    $apiKey = defined('TOAST_API_KEY') ? (string)TOAST_API_KEY : '';
+    if ($apiKey !== '' && !is_same_origin_request($_SERVER)) {
+        $given = (string)($_SERVER['HTTP_X_API_KEY'] ?? ($_POST['ApiKey'] ?? ''));
+        if (!hash_equals($apiKey, $given)) {
+            api_respond(401, 'API-Schlüssel fehlt oder ist falsch');
+        }
+    }
+    unset($_POST['ApiKey']);
+    $limit = defined('TOAST_API_RATE_LIMIT') ? (int)TOAST_API_RATE_LIMIT : 30;
+    if (!rate_limit_allow('toastapi', client_ip(), $limit, 60)) {
+        header('Retry-After: 60');
+        api_respond(429, 'Zu viele Anfragen');
+    }
+}
 
 function hybi10Decode($data)
 {
@@ -131,78 +185,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ) {
 
 
-        $payload = json_encode($_POST);
-
-
-        $host = '127.0.0.1';
-        $port = 9000;
-        $local = DASHBOARD_BASE_URL . "/monitor/";
-
-        $json = array(
-            "type" => "command",
-            "message" => "!urgent " . $payload
-        );
-        $data = json_encode($json);
-
-        $head = "GET / HTTP/1.1" . "\r\n" .
-            "Upgrade: WebSocket" . "\r\n" .
-            "Connection: Upgrade" . "\r\n" .
-            "Origin: $local" . "\r\n" .
-            "Host: $host" . "\r\n" .
-            "Sec-WebSocket-Key: asdasdaas76da7sd6asd6as7d" . "\r\n" .
-            "Content-Length: " . strlen($data) . "\r\n" . "\r\n";
-        //WebSocket handshake
-        $sock = fsockopen($host, $port, $errno, $errstr, 2);
-        fwrite($sock, $head) or die('error:' . $errno . ':' . $errstr);
-        $headers = fread($sock, 2000);
-        fwrite($sock, hybi10Encode($data)) or die('error:' . $errno . ':' . $errstr);
-        $wsdata = fread($sock, 2000);
-        hybi10Decode($wsdata);
-        fclose($sock);
+        $result = validate_toast($_POST);
+        if ($result['errors']) {
+            $msg = array();
+            foreach ($result['errors'] as $field => $error) {
+                $msg[] = "$field: $error";
+            }
+            api_respond(400, "Ungültige Parameter:\n" . implode("\n", $msg));
+        }
+        $payload = json_encode($result['data'], JSON_UNESCAPED_UNICODE);
+        api_send_ws("!urgent " . $payload);
         echo "OK";
     }elseif(isset($_POST["YouTubeURL"])){
 	
 	    // YouTube video with optional Target parameter
-	    $url = $_POST["YouTubeURL"];
-	    $target = isset($_POST["Target"]) ? $_POST["Target"] : null;
-	    
-	    // Build message with target if specified
-	    $videoMessage = $url;
-	    if ($target && !empty($target)) {
-	        $videoMessage .= "|" . $target;
+	    $url = validate_youtube_url($_POST["YouTubeURL"]);
+	    if ($url === null) {
+	        api_respond(400, 'YouTubeURL: keine gültige YouTube-URL');
+	    }
+	    $target = isset($_POST["Target"]) ? trim((string)$_POST["Target"]) : '';
+	    if ($target !== '' && !preg_match('/^[\p{L}\p{N} ._-]{1,64}$/u', $target)) {
+	        api_respond(400, 'Target: ungültig');
 	    }
 
-        $host = '127.0.0.1';
-        $port = 9000;
-        $local = DASHBOARD_BASE_URL . "/monitor/";
-
-        $json = array(
-            "type" => "command",
-            "message" => "!video " . $videoMessage
-        );
-        $data = json_encode($json);
-
-        $head = "GET / HTTP/1.1" . "\r\n" .
-            "Upgrade: WebSocket" . "\r\n" .
-            "Connection: Upgrade" . "\r\n" .
-            "Origin: $local" . "\r\n" .
-            "Host: $host" . "\r\n" .
-            "Sec-WebSocket-Key: asdasdaas76da7sd6asd6as7d" . "\r\n" .
-            "Content-Length: " . strlen($data) . "\r\n" . "\r\n";
-        //WebSocket handshake
-        $sock = fsockopen($host, $port, $errno, $errstr, 2);
-        fwrite($sock, $head) or die('error:' . $errno . ':' . $errstr);
-        $headers = fread($sock, 2000);
-        fwrite($sock, hybi10Encode($data)) or die('error:' . $errno . ':' . $errstr);
-        $wsdata = fread($sock, 2000);
-        hybi10Decode($wsdata);
-        fclose($sock);
+	    // Build message with target if specified
+	    $videoMessage = $url;
+	    if ($target !== '') {
+	        $videoMessage .= "|" . $target;
+	    }
+        api_send_ws("!video " . $videoMessage);
         echo "OK";
-
-
-
 	} else {
-        echo "Wrong Request! RTFM " . DASHBOARD_BASE_URL . "/websocket/api.php";
+        api_respond(400, "Wrong Request! RTFM " . DASHBOARD_BASE_URL . "/websocket/api.php");
     }
 } else {
     echo "

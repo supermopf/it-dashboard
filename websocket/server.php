@@ -61,11 +61,13 @@ register_shutdown_function(function() {
     }
 });
 
-include(__DIR__ .'/../config.php');
+include(getenv('DASHBOARD_CONFIG') ?: __DIR__ .'/../config.php');
 require_once(__DIR__ . '/db_helper.php');
+require_once(__DIR__ . '/lib/protocol.php');
+require_once(__DIR__ . '/../lib/security.php');
 
 $host = DASHBOARD_DOMAIN; //host
-$port = '9000'; //port
+$port = defined('WEBSOCKET_PORT') ? (string)WEBSOCKET_PORT : '9000'; //port
 $null = NULL; //null var
 
 //Create TCP/IP sream socket
@@ -122,12 +124,50 @@ $registered = array();
 $ProxyMatch = array();
 $dashboards = array(); // Dashboard registry: [resource_id => ['socket' => resource, 'name' => dashboardName]]
 $connectionCountByIP = array(); // Track connections per IP: [IP => count]
+$recvBuffers = array(); // Unvollständige Frames pro Client: [resource_id => string]
+$clientIPs = array(); // Reale Client-IP pro Socket: [resource_id => IP]
 
 define("MAX_CONNECTIONS_PER_IP", 10); // Maximum connections from single IP
 
-function get_http_response_code($url) {
-    $headers = get_headers($url);
-    return substr($headers[0], 9, 3);
+// Optional: Netze, aus denen steuernde Befehle (!var, !fpage, !urgent, …) angenommen werden.
+// Leer/undefiniert = bisheriges Verhalten (alle Clients dürfen alles). Siehe docs/SECURITY.md.
+$TrustedCommandNetworks = defined('WEBSOCKET_TRUSTED_COMMAND_NETWORKS') ? array_filter((array)WEBSOCKET_TRUSTED_COMMAND_NETWORKS) : array();
+// Optional: erlaubte Origin-Header beim Handshake (z. B. https://dashboard.example.local).
+$AllowedOrigins = defined('WEBSOCKET_ALLOWED_ORIGINS') ? array_filter((array)WEBSOCKET_ALLOWED_ORIGINS) : array();
+// Optional: Host-Whitelist für Toast-Medien, die der Server herunterlädt (SSRF-Schutz).
+$ToastMediaHosts = defined('TOAST_MEDIA_ALLOWED_HOSTS') ? array_filter((array)TOAST_MEDIA_ALLOWED_HOSTS) : array();
+$ToastMediaMaxBytes = defined('TOAST_MEDIA_MAX_BYTES') ? (int)TOAST_MEDIA_MAX_BYTES : 25 * 1024 * 1024;
+
+/** Befehle, die ohne Vertrauensstellung erlaubt sind (Registrierung, Listen). */
+function is_basic_command(string $message): bool
+{
+    foreach (array('!reg', '!dashboard', '!repeat', '!clientlist') as $prefix) {
+        if (strncmp($message, $prefix, strlen($prefix)) === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** gethostbyaddr() blockiert (DNS) – Ergebnisse begrenzt zwischenspeichern. */
+function cached_hostname($ip)
+{
+    static $cache = array();
+    if ($ip === null || $ip === '') {
+        return '';
+    }
+    if (!isset($cache[$ip])) {
+        if (count($cache) > 256) {
+            $cache = array();
+        }
+        $cache[$ip] = @gethostbyaddr($ip) ?: $ip;
+    }
+    return $cache[$ip];
+}
+
+function resource_id($socket)
+{
+    return is_object($socket) ? spl_object_id($socket) : (int)$socket;
 }
 
 function LogDebug($message, $LogLevel = 3)
@@ -195,19 +235,32 @@ while (true) {
         }
         
         //returns the socket resources in $changed array
-        socket_select($changed, $null, $null, 0, 10);
+        // 100 ms statt 10 µs: kein Busy-Loop mehr (AUDIT S1). select() kehrt bei Aktivität sofort zurück;
+        // der 1-s-Update-Takt und die Rotation bleiben auf < 0,1 s genau.
+        socket_select($changed, $null, $null, 0, 100000);
 
 
     //check for new socket
     if (in_array($socket, $changed)) {
         $socket_new = socket_accept($socket); //accpet new socket
-        
-        $header = socket_read($socket_new, 1024); //read data sent by the socket
-        perform_handshaking($header, $socket_new, $host, $port, $ForwardedIP); //perform websocket handshake
 
+        $header = socket_read($socket_new, 4096); //read data sent by the socket
+        $ForwardedIP = '';
+        if (!perform_handshaking($header, $socket_new, $host, $port, $ForwardedIP, $AllowedOrigins)) { //perform websocket handshake
+            @socket_close($socket_new);
+            $found_socket = array_search($socket, $changed);
+            unset($changed[$found_socket]);
+            continue;
+        }
+
+        // Ohne X-Forwarded-For (direkter Zugriff) die Peer-Adresse verwenden statt eines Restwerts.
+        if ($ForwardedIP === '') {
+            socket_getpeername($socket_new, $peerIp, $peerPort);
+            $ForwardedIP = $peerIp . ':' . $peerPort;
+        }
         $Connection = explode(":",$ForwardedIP);
         $ip = $Connection[0];
-        $port = $Connection[1];
+        $clientPort = $Connection[1] ?? '';
         
         // Check connection limit per IP
         if (isset($connectionCountByIP[$ip]) && $connectionCountByIP[$ip] >= MAX_CONNECTIONS_PER_IP) {
@@ -230,9 +283,10 @@ while (true) {
 
         socket_getpeername($socket_new, $proxyip, $proxyport);
 
-        $ProxyMatch[$proxyip . ":" . $proxyport] = array('IP' => $ip,'Port' => $port);
+        $ProxyMatch[$proxyip . ":" . $proxyport] = array('IP' => $ip,'Port' => $clientPort);
+        $clientIPs[resource_id($socket_new)] = $ip;
 
-        $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $port . ' (' . gethostbyaddr($ip) . ') connected (' . (count($clients) - 1) . ' Clients, IP has ' . $connectionCountByIP[$ip] . ' connections)'))); //prepare json data
+        $response = mask(json_encode(array('type' => 'console', 'message' => $ip . ':' . $clientPort . ' (' . cached_hostname($ip) . ') connected (' . (count($clients) - 1) . ' Clients, IP has ' . $connectionCountByIP[$ip] . ' connections)'))); //prepare json data
         LogDebug($ip . " verbunden (" . count($clients) . " Clients, IP total: " . $connectionCountByIP[$ip] . ")", 2);
         send_message($response); //notify all users about new connection
 
@@ -269,7 +323,9 @@ while (true) {
 				$Page = 1;
 				//Check for Snow
 				try {
-					$json = @file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de');
+					// Timeout, damit ein hängender Wetterdienst nicht alle Clients blockiert (AUDIT S7).
+					$weatherCtx = stream_context_create(array('http' => array('timeout' => 3)));
+					$json = @file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de', false, $weatherCtx);
 					if ($json !== false) {
 						$oIsernhagen = json_decode($json);
 						if ($oIsernhagen && isset($oIsernhagen->weather[0]->description)) {
@@ -370,37 +426,70 @@ while (true) {
 
     //loop through all connected sockets
     foreach ($changed as $changed_socket) {
+        $forceDisconnect = false;
 
         //check for any incomming data
-        while (@socket_recv($changed_socket, $buf, 1024, 0) >= 1) {
-            $received_text = unmask($buf); //unmask data
+        while (@socket_recv($changed_socket, $buf, 65536, 0) >= 1) {
+            // Frames puffern und vollständig dekodieren (Legacy: genau ein Frame ≤ 1024 Byte, AUDIT S3).
+            $rid = resource_id($changed_socket);
+            $recvBuffers[$rid] = ($recvBuffers[$rid] ?? '') . $buf;
+            try {
+                list($frames, $recvBuffers[$rid]) = ws_decode_frames($recvBuffers[$rid]);
+            } catch (InvalidArgumentException $e) {
+                LogNormal("Frame verworfen: " . $e->getMessage());
+                $frames = array();
+                $recvBuffers[$rid] = '';
+            }
+            if (strlen($recvBuffers[$rid]) > WS_MAX_FRAME_BYTES) {
+                $recvBuffers[$rid] = '';
+            }
+            $senderIp = $clientIPs[$rid] ?? '';
+
+            foreach ($frames as $frame) {
+            if ($frame['opcode'] === WS_OPCODE_PING) {
+                $pong = ws_encode_frame($frame['payload'], WS_OPCODE_PONG);
+                @socket_write($changed_socket, $pong, strlen($pong));
+                continue;
+            }
+            if ($frame['opcode'] === WS_OPCODE_CLOSE) {
+                // Close-Handshake beantworten und Verbindung sofort freigeben. Legacy antwortete nicht;
+                // Clients hielten die TCP-Verbindung dann bis zu ihrem Timeout offen (Verbindungslimit pro IP).
+                $closeFrame = ws_encode_frame(substr($frame['payload'], 0, 2), WS_OPCODE_CLOSE);
+                @socket_write($changed_socket, $closeFrame, strlen($closeFrame));
+                $forceDisconnect = true;
+                break;
+            }
+            if ($frame['opcode'] !== WS_OPCODE_TEXT) {
+                continue; // Pong/Binär: kein Befehl
+            }
+            $received_text = $frame['payload'];
             $tst_msg = json_decode($received_text); //json decode
 
             //prepare data to be sent to client
-            if (!empty($tst_msg->message)) {
+            if (is_object($tst_msg) && !empty($tst_msg->message) && is_string($tst_msg->message)) {
                 $user_message = $tst_msg->message; //message text
-                LogDebug("USERMESSAGE: " . $user_message, 3);
-                //!var Varname Wert
+                LogDebug("USERMESSAGE: " . substr($user_message, 0, 500), 3);
+                if ($TrustedCommandNetworks && !is_basic_command($user_message) && !ip_in_cidrs($senderIp, $TrustedCommandNetworks)) {
+                    LogNormal("Befehl von nicht vertrauenswürdiger IP $senderIp verworfen: " . substr($user_message, 0, 40));
+                    continue;
+                }
+                //!var Varname Wert – nur freigegebene Variablen mit Typprüfung (AUDIT S2)
                 if (substr($user_message, 0, 4) == "!var") {
-                    $split = explode(" ", $user_message);
-
-                    LogNormal($split[1] . " = " . $split[2]);
-
-                    if ($split[2] == "True") {
-                        $var = True;
-                    } elseif ($split[2] == "False") {
-                        $var = False;
+                    $parsed = ws_parse_var($user_message);
+                    if ($parsed === null) {
+                        LogNormal("!var abgelehnt: " . substr($user_message, 0, 80));
                     } else {
-                        $var = urldecode($split[2]);
+                        list($varName, $var) = $parsed;
+                        LogNormal($varName . " = " . (is_bool($var) ? ($var ? 'True' : 'False') : $var));
+                        $$varName = $var;
                     }
-                    ${"$split[1]"} = $var;
                 } elseif (substr($user_message, 0, 4) == "!reg") {
                     $name = "";
-                    if (socket_getpeername($changed_socket, $ip, $port)) {
+                    if (socket_getpeername($changed_socket, $ip, $peerPort)) {
                         $split = explode(" ", $user_message, 2);
                         $name = isset($split[1]) ? trim($split[1]) : "";
 
-                        $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+                        $RealIP = ($ProxyMatch[$ip . ":" . $peerPort]['IP'] ?? $ip) . ":" . ($ProxyMatch[$ip . ":" . $peerPort]['Port'] ?? $peerPort);
 
                         $registered[$RealIP] = $name;
                     }
@@ -432,28 +521,28 @@ while (true) {
                         $resourceId = is_object($changed_socket) ? spl_object_id($changed_socket) : (int)$changed_socket;
                         $dashboards[$resourceId] = array('socket' => $changed_socket, 'name' => $dashboardName);
                         
-                        if (socket_getpeername($changed_socket, $ip, $port)) {
-                            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+                        if (socket_getpeername($changed_socket, $ip, $peerPort)) {
+                            $RealIP = ($ProxyMatch[$ip . ":" . $peerPort]['IP'] ?? $ip) . ":" . ($ProxyMatch[$ip . ":" . $peerPort]['Port'] ?? $peerPort);
                             LogNormal("Dashboard '$dashboardName' registered from $RealIP");
                         }
                     }
                 } elseif ($user_message == "!clientlist") {
                     foreach ($clients as $clt) {
                         if ($clt != $clients[0]) {
-                            socket_getpeername($clt, $ip, $port);
-                            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+                            socket_getpeername($clt, $ip, $peerPort);
+                            $RealIP = ($ProxyMatch[$ip . ":" . $peerPort]['IP'] ?? $ip) . ":" . ($ProxyMatch[$ip . ":" . $peerPort]['Port'] ?? $peerPort);
 
                             if (isset($registered[$RealIP])) {
                                 $var_array = array(
                                     "type" => "clientlist",
-                                    "message" => "<tr><td>" . $RealIP . "</td><td>" . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . "</td><td>" . $registered[$RealIP] . "</td></tr>"
+                                    "message" => "<tr><td>" . h($RealIP) . "</td><td>" . h(cached_hostname($ProxyMatch[$ip . ":" . $peerPort]['IP'] ?? $ip)) . "</td><td>" . h($registered[$RealIP]) . "</td></tr>"
                                 );
                                 $command = mask(json_encode($var_array));
                                 send_message($command);
                             } else {
                                 $var_array = array(
                                     "type" => "clientlist",
-                                    "message" => "<tr><td>" . $RealIP . "</td><td>(" . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . ")</td><td>?</td></tr>"
+                                    "message" => "<tr><td>" . h($RealIP) . "</td><td>(" . h(cached_hostname($ProxyMatch[$ip . ":" . $peerPort]['IP'] ?? $ip)) . ")</td><td>?</td></tr>"
                                 );
                                 $command = mask(json_encode($var_array));
                                 send_message($command);
@@ -516,47 +605,35 @@ while (true) {
                     }
                 } elseif (substr($user_message, 0, 7) == "!urgent") {
 
-                    $split = explode("!urgent ", $user_message);
-                    $data = $split[1];
+                    $split = explode("!urgent ", $user_message, 2);
+                    $data = $split[1] ?? '';
                     $obj = json_decode($data);
-                    //CacheSound
-                    if (isset($obj->ToastSound ) && $obj->ToastSound != "") {
-                        $parts = parse_url($obj->ToastSound);
-                        preg_match('/[^\/]+$/', $parts["path"], $matches);
-                        $last_word = $matches[0];
-
-                        if(get_http_response_code($obj->ToastSound) != 200){
-                            unset($obj->ToastSound);
-                        }else{
-                            //URL is valid and available
-                            $Media = file_get_contents($obj->ToastSound);
-                            $hash = md5($Media);
-                            $file_info = new finfo(FILEINFO_MIME_TYPE);
-                            $filetype = mime2ext($file_info->buffer($Media));
-
-                            if (!file_exists('C:/inetpub/dashboard/websocket/cache/' . $last_word)) {
-                                file_put_contents('C:/inetpub/dashboard/websocket/cache/' . $hash . "." . $filetype, fopen($obj->ToastSound, 'r'));
-                            }
-                            $obj->ToastSound = DASHBOARD_BASE_URL . '/websocket/cache/' . $hash . "." . $filetype;
-                        }
+                    if (!is_object($obj)) {
+                        LogNormal("!urgent mit ungültigem JSON verworfen");
+                        continue;
                     }
-                    //CachePicture
-                    if (isset($obj->ToastPicture ) && $obj->ToastPicture != "") {
-                        $parts = parse_url($obj->ToastPicture);
-                        preg_match('/[^\/]+$/', $parts["path"], $matches);
-                        $last_word = $matches[0];
-                        if(get_http_response_code($obj->ToastPicture) != 200){
-                            unset($obj->ToastPicture);
-                        }else{
-                            $Media = file_get_contents($obj->ToastPicture);
-                            $hash = md5($Media);
-                            $file_info = new finfo(FILEINFO_MIME_TYPE);
-                            $filetype = mime2ext($file_info->buffer($Media));
-
-                            if (!file_exists('C:/inetpub/dashboard/websocket/imgcache/' . $last_word)) {
-                                file_put_contents('C:/inetpub/dashboard/websocket/imgcache/' . $hash . "." . $filetype, fopen($obj->ToastPicture, 'r'));
-                            }
-                            $obj->ToastPicture = DASHBOARD_BASE_URL . '/websocket/imgcache/' . $hash . "." . $filetype;
+                    // Medien server-seitig cachen: ein Abruf, Timeout, Größen- und Typlimit,
+                    // optional Host-Whitelist (AUDIT S8/X9). Bereits gecachte eigene URLs nicht erneut laden.
+                    $ownCache = rtrim(DASHBOARD_BASE_URL, '/') . '/websocket/';
+                    foreach (array('ToastSound' => array('cache', 'sound'), 'ToastPicture' => array('imgcache', 'picture')) as $field => $cfg) {
+                        if (!isset($obj->$field) || $obj->$field === '' || !is_string($obj->$field)) {
+                            continue;
+                        }
+                        $mediaUrl = trim($obj->$field);
+                        if (strpos($mediaUrl, $ownCache . $cfg[0] . '/') === 0) {
+                            continue;
+                        }
+                        if (!url_host_allowed($mediaUrl, $ToastMediaHosts)) {
+                            LogNormal("$field: Host nicht erlaubt – entfernt");
+                            unset($obj->$field);
+                            continue;
+                        }
+                        $cachedName = fetch_media_to_cache($mediaUrl, __DIR__ . '/' . $cfg[0], $cfg[1], $ToastMediaMaxBytes);
+                        if ($cachedName === null) {
+                            LogNormal("$field nicht abrufbar oder Typ nicht erlaubt – entfernt");
+                            unset($obj->$field);
+                        } else {
+                            $obj->$field = $ownCache . $cfg[0] . '/' . $cachedName;
                         }
                     }
                     $json = json_encode($obj);
@@ -595,17 +672,25 @@ while (true) {
                     send_message($response_text); //send data
                 }
             }
+            } // foreach $frames
+            if ($forceDisconnect) {
+                break; // weiter zur Disconnect-Behandlung unten
+            }
             break 2; //exist this loop
         }
 
-        $buf = @socket_read($changed_socket, 1024, PHP_NORMAL_READ);
-        if ($buf === false) { // check disconnected client
+        // Hier ankommen heißt: select() meldete den Socket lesbar, recv() lieferte aber keine Daten → EOF/Fehler.
+        $buf = $forceDisconnect ? false : @socket_read($changed_socket, 1024, PHP_NORMAL_READ);
+        if ($buf === false || $buf === '') { // check disconnected client
             // remove client for $clients array
             $found_socket = array_search($changed_socket, $clients);
-            socket_getpeername($changed_socket, $ip, $port);
-            
+            // Eigene Variable für den Peer-Port: $port ist der Server-Port (AUDIT S9).
+            socket_getpeername($changed_socket, $ip, $peerPort);
+            $proxyKey = $ip . ":" . $peerPort;
+            $match = $ProxyMatch[$proxyKey] ?? array('IP' => $ip, 'Port' => $peerPort);
+
             // Decrement connection counter for this IP
-            $realClientIP = $ProxyMatch[$ip . ":" . $port]['IP'];
+            $realClientIP = $match['IP'];
             if (isset($connectionCountByIP[$realClientIP]) && $connectionCountByIP[$realClientIP] > 0) {
                 $connectionCountByIP[$realClientIP]--;
                 LogDebug("Connection count for $realClientIP decreased to " . $connectionCountByIP[$realClientIP], 3);
@@ -623,10 +708,13 @@ while (true) {
             $clients = array_values($clients); // Re-index array to prevent holes
             socket_close($changed_socket);
 
-            $RealIP = $ProxyMatch[$ip . ":" . $port]['IP'] . ":" . $ProxyMatch[$ip . ":" . $port]['Port'];
+            $RealIP = $match['IP'] . ":" . $match['Port'];
+
+            // Zuordnungen entfernen – wuchsen im Dauerbetrieb unbegrenzt (AUDIT S5).
+            unset($ProxyMatch[$proxyKey], $registered[$RealIP], $recvBuffers[$resourceId], $clientIPs[$resourceId]);
 
             //notify all users about disconnected connection
-            $response = mask(json_encode(array('type' => 'console', 'message' => $RealIP . ' (' . gethostbyaddr($ProxyMatch[$ip . ":" . $port]['IP']) . ') disconnected')));
+            $response = mask(json_encode(array('type' => 'console', 'message' => $RealIP . ' (' . cached_hostname($match['IP']) . ') disconnected')));
             LogDebug($ip . " getrennt", 2);
             send_message($response);
         }
@@ -716,66 +804,53 @@ function send_message($msg, $target = "Alle")
 }
 
 
-//Unmask incoming framed message
-function unmask($text)
-{
-    $length = ord($text[1]) & 127;
-    if ($length == 126) {
-        $masks = substr($text, 4, 4);
-        $data = substr($text, 8);
-    } elseif ($length == 127) {
-        $masks = substr($text, 10, 4);
-        $data = substr($text, 14);
-    } else {
-        $masks = substr($text, 2, 4);
-        $data = substr($text, 6);
-    }
-    $text = "";
-    for ($i = 0; $i < strlen($data); ++$i) {
-        $text .= $data[$i] ^ $masks[$i % 4];
-    }
-    return $text;
-}
-
 //Encode message for transfer to client.
 function mask($text)
 {
-    $b1 = 0x80 | (0x1 & 0x0f);
-    $length = strlen($text);
-
-    if ($length <= 125)
-        $header = pack('CC', $b1, $length);
-    elseif ($length > 125 && $length < 65536)
-        $header = pack('CCn', $b1, 126, $length);
-    elseif ($length >= 65536)
-        $header = pack('CCNN', $b1, 127, $length);
-    return $header . $text;
+    return ws_encode_frame($text);
 }
 
 //handshake new client.
-function perform_handshaking($receved_header, $client_conn, $host, $port, &$ForwardedIP)
+function perform_handshaking($receved_header, $client_conn, $host, $port, &$ForwardedIP, array $allowedOrigins = array())
 {
     $headers = array();
-    $lines = preg_split("/\r\n/", $receved_header);
+    $lines = preg_split("/\r\n/", (string)$receved_header);
     foreach ($lines as $line) {
         $line = chop($line);
         if (preg_match('/\A(\S+): (.*)\z/', $line, $matches)) {
-            $headers[$matches[1]] = $matches[2];
+            $headers[strtolower($matches[1])] = $matches[2];
         }
     }
-    if (isset($headers['X-Forwarded-For'])) {
-        $ForwardedIP = $headers['X-Forwarded-For'];
+    if (isset($headers['x-forwarded-for'])) {
+        $ForwardedIP = trim(explode(',', $headers['x-forwarded-for'])[0]);
     }
-    if (isset($headers['Sec-WebSocket-Key'])) {
-        $secKey = $headers['Sec-WebSocket-Key'];
-        $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-        //hand shaking header
-        $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
-            "Upgrade: websocket\r\n" .
-            "Connection: Upgrade\r\n" .
-            "WebSocket-Origin: $host\r\n" .
-            "WebSocket-Location: ws://$host:$port/websocket/server.php\r\n" .
-            "Sec-WebSocket-Accept:$secAccept\r\n\r\n";
-        socket_write($client_conn, $upgrade, strlen($upgrade));
+    // Optionale Origin-Prüfung (WEBSOCKET_ALLOWED_ORIGINS). Clients ohne Origin (PHP-Skripte) bleiben erlaubt.
+    if ($allowedOrigins && isset($headers['origin'])) {
+        $origin = rtrim($headers['origin'], '/');
+        $ok = false;
+        foreach ($allowedOrigins as $allowed) {
+            if (strcasecmp(rtrim((string)$allowed, '/'), $origin) === 0) {
+                $ok = true;
+                break;
+            }
+        }
+        if (!$ok) {
+            LogNormal("Handshake abgelehnt: Origin " . substr($origin, 0, 100));
+            return false;
+        }
     }
+    if (!isset($headers['sec-websocket-key'])) {
+        return false;
+    }
+    $secKey = $headers['sec-websocket-key'];
+    $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+    //hand shaking header
+    $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+        "Upgrade: websocket\r\n" .
+        "Connection: Upgrade\r\n" .
+        "WebSocket-Origin: $host\r\n" .
+        "WebSocket-Location: ws://$host:$port/websocket/server.php\r\n" .
+        "Sec-WebSocket-Accept:$secAccept\r\n\r\n";
+    socket_write($client_conn, $upgrade, strlen($upgrade));
+    return true;
 }

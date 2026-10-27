@@ -1,3 +1,7 @@
+<?php // Zugriffsschutz, aktiv nur mit ADMIN_ALLOWED_USERS/ADMIN_ALLOWED_NETWORKS (docs/SECURITY.md)
+if (!defined('DASHBOARD_BASE_URL')) { require_once(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php'); }
+require_once(__DIR__ . '/../lib/security.php');
+require_admin_access(); ?>
 <!DOCTYPE html>
 <html manifest="cache.txt">
 

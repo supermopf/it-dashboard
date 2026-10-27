@@ -1,11 +1,14 @@
 <?php
-require("../config.php");
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
+require_once(__DIR__ . '/../lib/security.php');
+require_admin_access();
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
     if(isset($_POST["user"]) && $_POST["user"] != ""){
-       $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Julianometer]([Description],[User],[Timestamp]) VALUES ('".$_POST["description"]."','".$_POST["user"]."',GETDATE())";
-	   if(sqlsrv_query($conn, $sql)){
+       // Parametrisiert statt String-Konkatenation (AUDIT X4)
+       $sql = "INSERT INTO [IT-Dashboard].[dbo].[IT-Dashboard_Julianometer]([Description],[User],[Timestamp]) VALUES (?,?,GETDATE())";
+	   if(sqlsrv_query($conn, $sql, array(mb_substr((string)($_POST["description"] ?? ''), 0, 4000), mb_substr((string)$_POST["user"], 0, 200)))){
 			echo "OK";
         }else {
             echo "<pre>";

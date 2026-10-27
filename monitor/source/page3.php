@@ -9,6 +9,7 @@
 // Normal Performance
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 $query = "
@@ -90,14 +91,14 @@ foreach ($servers as $name => $data) {
             <div class="card-header">
                 <div class="card-title">
                     <div class="title">
-                        <div class="col-sm-8" id="<?= $name ?>"><?= $name ?></div>
+                        <div class="col-sm-8" id="<?= h($name) ?>"><?= h($name) ?></div>
                         <div class="col-sm-2" style="<?= PRIMARY_STYLE ?>"><?= $latest['CPU'] ?>%</div>
                         <div class="col-sm-2" style="<?= SECONDARY_STYLE ?>"><?= $latest['RAM'] ?>%</div>
                     </div>
                 </div>
             </div>
             <div class="card-body no-padding">
-                <canvas id="perf-<?= $name ?>" class="chart"></canvas>
+                <canvas id="perf-<?= h($name) ?>" class="chart"></canvas>
             </div>
         </div>
     </div>
@@ -165,7 +166,7 @@ foreach ($servers as $name => $data) {
     ?>
     <!-- Perf <?= $name ?> -->
     <script type="text/javascript">
-        const ctx<?= $i ?> = $("#perf-<?= $name ?>").get(0).getContext("2d");
+        const ctx<?= $i ?> = $(document.getElementById(<?= json_for_html("perf-" . $name) ?>)).get(0).getContext("2d");
         const data<?= $i ?> = {
             labels: <?= json_encode($timestamp_labels) ?>,
             datasets: [

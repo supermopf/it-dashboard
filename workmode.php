@@ -1,3 +1,7 @@
+<?php // Zugriffsschutz, aktiv nur mit ADMIN_ALLOWED_USERS/ADMIN_ALLOWED_NETWORKS (docs/SECURITY.md)
+if (!defined('DASHBOARD_BASE_URL')) { require_once(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/config.php'); }
+require_once(__DIR__ . '/lib/security.php');
+require_admin_access(); ?>
 <?php
 /**
  * Created by PhpStorm.
@@ -5,7 +9,7 @@
  * Date: 23.02.2017
  * Time: 15:38
  */
-require('./config.php');
+// config.php wurde bereits im Zugriffsschutz oben geladen
 
 $serverName = HELPLINE_SQL_INSTANCE;
 $connectionInfo = array("Database" => HELPLINE_SQL_DATABASE, "CharacterSet" => "UTF-8");

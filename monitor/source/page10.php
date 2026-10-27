@@ -9,6 +9,7 @@
 //Helpline
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $serverName = DASHBOARD_SQL_INSTANCE;
 $connectionInfo = array("Database" => DASHBOARD_SQL_DATABASE, "CharacterSet" => "UTF-8");
 $conn = sqlsrv_connect($serverName, $connectionInfo);
@@ -62,8 +63,8 @@ if ($conn) {
 							$newDate = $feature["Timestamp"]->format('d.m.Y');
 							echo "<tr>";
 								echo "<td>".$newDate."</td>";
-								echo "<td>".$feature["User"]."</td>";
-								echo "<td>".$feature["Description"]."</td>";
+								echo "<td>".h($feature["User"])."</td>";
+								echo "<td>".h($feature["Description"])."</td>";
 							echo "</tr>";
 						}
 					?>

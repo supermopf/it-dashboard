@@ -2,19 +2,30 @@
 /**
  * WebSocket Server Log Viewer
  */
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
+require_once(__DIR__ . '/../lib/security.php');
+require_admin_access();
 $logFile = __DIR__ . '/logs/websocket.log';
-$lines = isset($_GET['lines']) ? (int)$_GET['lines'] : 500;
+$lines = isset($_GET['lines']) ? max(1, min(5000, (int)$_GET['lines'])) : 500;
 $autoRefresh = isset($_GET['refresh']) ? (int)$_GET['refresh'] : 0;
 
 // Read log file
 $logContent = '';
 if (file_exists($logFile)) {
-    $fileContent = file($logFile);
-    $totalLines = count($fileContent);
-    
-    // Get last X lines
+    // Nur das Dateiende lesen statt der kompletten Datei (bis 10 MB) pro Aufruf (AUDIT X17).
+    $fileSize = filesize($logFile);
+    $fh = fopen($logFile, 'rb');
+    $chunk = (int)min($fileSize, max(65536, $lines * 400));
+    fseek($fh, -$chunk, SEEK_END);
+    $tail = (string)fread($fh, $chunk);
+    fclose($fh);
+    $fileContent = explode("\n", rtrim($tail, "\n"));
+    if ($chunk < $fileSize) {
+        array_shift($fileContent); // erste, evtl. abgeschnittene Zeile
+    }
+    $totalLines = $chunk < $fileSize ? count($fileContent) . '+' : count($fileContent);
     $logLines = array_slice($fileContent, -$lines);
-    $logContent = implode('', $logLines);
+    $logContent = implode("\n", $logLines);
     
     $fileSize = filesize($logFile);
     $fileSizeMB = round($fileSize / 1024 / 1024, 2);
@@ -134,13 +145,14 @@ include('navbar.php');
                         <div class="btn-group pull-right">
                             <button class="btn btn-primary" onclick="location.reload()"><i class="fas fa-sync"></i> Aktualisieren</button>
                             <button class="btn btn-success" onclick="scrollToBottom()"><i class="fas fa-arrow-down"></i> Nach unten</button>
-                            <a href="?clear=1" class="btn btn-danger" onclick="return confirm('Wirklich alle Logs löschen?')"><i class="fas fa-trash"></i> Logs löschen</a>
+                            <form method="post" style="display:inline" onsubmit="return confirm('Wirklich alle Logs löschen?')"><input type="hidden" name="clear" value="1"><button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Logs löschen</button></form>
                         </div>
                     </div>
                     
                     <div class="log-container" id="logContainer">
                         <?php
-                        if (isset($_GET['clear'])) {
+                        // Löschen nur per POST von derselben Seite (kein CSRF per Link/GET mehr)
+                        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear'])) {
                             file_put_contents($logFile, '');
                             echo '<div class="alert alert-success">Logs gelöscht!</div>';
                             echo '<meta http-equiv="refresh" content="1;url=logs.php">';

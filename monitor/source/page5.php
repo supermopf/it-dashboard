@@ -9,6 +9,7 @@
 // SCOM Meldungen
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
@@ -55,7 +56,7 @@ if ($conn) {
                         //New Server
                         $lasthostname = $Value["Hostname"];
 
-                        echo '<a href="#" class="list-group-item active">' . $Value["Hostname"] . '</a>'; //Title
+                        echo '<a href="#" class="list-group-item active">' . h($Value["Hostname"]) . '</a>'; //Title
                         echo '<div class="list-group">';
 
                         //Title is Object
@@ -70,7 +71,7 @@ if ($conn) {
                         $icon = "<i class=\"fa fa-times\" aria-hidden=\"true\"></i>";
                     }
 
-                    echo '<a href="#" class="list-group-item">' . $icon . ' ' . $Value["ObjectDisplayName"] . ' ' . $Value["MonitorDisplayName"] . " (" . $Value["OperationalState"] . ')<span class="pull-right">' . $Value["LastTimeModified"] . '</span></a>';
+                    echo '<a href="#" class="list-group-item">' . $icon . ' ' . h($Value["ObjectDisplayName"]) . ' ' . h($Value["MonitorDisplayName"]) . " (" . h($Value["OperationalState"]) . ')<span class="pull-right">' . h($Value["LastTimeModified"]) . '</span></a>';
 
                     //Item is Object
                     $objects++;

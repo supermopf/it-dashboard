@@ -6,6 +6,7 @@
  * Time: 16:12
  */
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
@@ -38,7 +39,7 @@ if ($conn) {
 
 <div class="row">
     <div class="col-lg-12">
-        <div class="page-header text-center"><h1>+++<?php echo $postillon[0]['text'] ?>+++</h1></div>
+        <div class="page-header text-center"><h1>+++<?php echo h($postillon[0]['text']) ?>+++</h1></div>
     </div>
 </div>
 <div class="row">
@@ -46,15 +47,15 @@ if ($conn) {
         <div class="card equal">
             <div class="card-header">
                 <div class="card-title">
-                    <div class="title"><h2><strong><?php echo $thecodinglove[0]["title"]; ?></strong></h2></div>
+                    <div class="title"><h2><strong><?php echo h($thecodinglove[0]["title"]); ?></strong></h2></div>
                 </div>
             </div>
             <div class="panel-body">
                 <?php
                 if(strpos($thecodinglove[0]["URL"],"webm") !== false){
-                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.$thecodinglove[0]["URL"].'"></video>';
+                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.h($thecodinglove[0]["URL"]).'"></video>';
                 }else{
-                    echo '<img src="'.$thecodinglove[0]["URL"].'" class="col-xs-12 img-responsive">';
+                    echo '<img src="'.h($thecodinglove[0]["URL"]).'" class="col-xs-12 img-responsive">';
                 }
                 ?>
             </div>
@@ -64,15 +65,15 @@ if ($conn) {
         <div class="card equal">
             <div class="card-header">
                 <div class="card-title">
-                    <div class="title"><h2><strong><?php echo $thecodinglove[1]["title"]; ?></strong></h2></div>
+                    <div class="title"><h2><strong><?php echo h($thecodinglove[1]["title"]); ?></strong></h2></div>
                 </div>
             </div>
             <div class="panel-body">
                 <?php
                 if(strpos($thecodinglove[1]["URL"],"webm") !== false){
-                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.$thecodinglove[1]["URL"].'"></video>';
+                    echo '<video autoplay loop class="col-xs-12 img-responsive" src="'.h($thecodinglove[1]["URL"]).'"></video>';
                 }else{
-                    echo '<img src="'.$thecodinglove[1]["URL"].'" class="col-xs-12 img-responsive">';
+                    echo '<img src="'.h($thecodinglove[1]["URL"]).'" class="col-xs-12 img-responsive">';
                 }
                 ?>
             </div>

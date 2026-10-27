@@ -327,7 +327,7 @@ $(document).ready(function () {
                 $("#cycle_checkbox").bootstrapSwitch('state', JSON.parse(msg.Cycle), true);
             }
             if (JSON.parse($("#wheel_checkbox").bootstrapSwitch('state')) !== JSON.parse(msg.Wheel)) {
-                $("#wheel_checkbox").bootstrapSwitch('state', JSON.parse(msg.Cycle), true);
+                $("#wheel_checkbox").bootstrapSwitch('state', JSON.parse(msg.Wheel), true);
             }
             if (JSON.parse($("#radio_checkbox").bootstrapSwitch('state')) !== JSON.parse(msg.Radio)) {
                 $("#radio_checkbox").bootstrapSwitch('state', JSON.parse(msg.Radio), true);
@@ -353,13 +353,30 @@ $(document).ready(function () {
         }
     };
 
+    // Bisher: sofortiges location.reload() bei jedem Fehler → Reload-Schleife, solange der Server
+    // nicht erreichbar ist (AUDIT P26). Jetzt: verzögerter Reload mit exponentiellem Backoff + Jitter.
+    var reloadScheduled = false;
+    function scheduleReload() {
+        if (reloadScheduled) return;
+        reloadScheduled = true;
+        var attempt = 0;
+        try { attempt = parseInt(sessionStorage.getItem('control.reconnect') || '0', 10) || 0; } catch (e) {}
+        var delay = Math.min(30000, 1000 * Math.pow(2, attempt));
+        delay = Math.round(delay / 2 + Math.random() * delay / 2);
+        try { sessionStorage.setItem('control.reconnect', String(attempt + 1)); } catch (e) {}
+        console.log("Neuer Verbindungsversuch in " + delay + " ms");
+        setTimeout(function () { location.reload(); }, delay);
+    }
+    websocket.addEventListener('open', function () {
+        try { sessionStorage.removeItem('control.reconnect'); } catch (e) {}
+    });
     websocket.onerror = function (ev) {
         console.log("Error Occurred - " + ev.data);
-        location.reload();
+        scheduleReload();
     };
     websocket.onclose = function (ev) {
         console.log("Connection Closed");
-        location.reload();
+        scheduleReload();
     };
 
 

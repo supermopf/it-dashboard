@@ -6,9 +6,14 @@
  * Time: 11:10
  */
 
-require('../config.php');
+require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
 
-$name = $_GET["name"];
+// ldap_escape verhindert LDAP-Filter-Injection (z. B. name=*), AUDIT X5
+$name = ldap_escape(substr((string)($_GET["name"] ?? ''), 0, 256), '', LDAP_ESCAPE_FILTER);
+if ($name === '') {
+    http_response_code(400);
+    die('name fehlt');
+}
 
 
 $ldap_connection = ldap_connect(LDAP_DOMAIN);
@@ -31,6 +36,7 @@ if (FALSE !== $result) {
     $entries = ldap_get_entries($ldap_connection, $result);
     if ($entries['count'] == 1 && isset($entries[0]["thumbnailphoto"])) {
         header('Content-Type: image/jpeg');
+        header('Cache-Control: max-age=3600');
         echo $entries[0]["thumbnailphoto"][0];
     } else {
 		$search_filter = "(&(objectCategory=person)(objectClass=user)(mail=" . $name . "))";
@@ -40,9 +46,9 @@ if (FALSE !== $result) {
 		header('Content-Type: image/jpeg');
 		echo $entries[0]["thumbnailphoto"][0];
 	} else {
-		$file = file_get_contents(DASHBOARD_BASE_URL . '/websocket/nopicture.png');
 		header('Content-type: image/png');
-			echo $file;
+		header('Cache-Control: max-age=3600');
+		readfile(__DIR__ . '/nopicture.png');
 		}
     }
 }

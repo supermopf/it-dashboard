@@ -9,6 +9,7 @@
 //Helpline
 //
 require("../../config.php");
+require_once(__DIR__ . '/../../lib/security.php');
 $serverName = HELPLINE_SQL_INSTANCE;
 $connectionInfo = array("Database" => HELPLINE_SQL_DATABASE, "CharacterSet" => "UTF-8");
 $conn = sqlsrv_connect($serverName, $connectionInfo);
@@ -207,9 +208,9 @@ order by referencenumber desc
                     ?>
                         <tr class='helplinetable'>
                             <td class='h4 text'><span><?= $prio ?></span></td>
-                            <td class='h4 text'><span><?= $ticket["referencenumber"] ?></span></td>
-                            <td class='h4 text'><span><?= $ticket["requester"] ?></span></td>
-                            <td class='h4 text'><span><?= $ticket["subject"] ?></span></td>
+                            <td class='h4 text'><span><?= h($ticket["referencenumber"]) ?></span></td>
+                            <td class='h4 text'><span><?= h($ticket["requester"]) ?></span></td>
+                            <td class='h4 text'><span><?= h($ticket["subject"]) ?></span></td>
                         </tr>
                     <?php
                     }
