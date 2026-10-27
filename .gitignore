@@ -35,3 +35,10 @@ radar.png
 *.wav
 *.log
 *.db
+# Frontend build / tooling
+/frontend/node_modules
+/frontend/test-results
+/frontend/playwright-report
+/frontend/.vite
+/monitor/dist
+/frontend/e2e-last.log

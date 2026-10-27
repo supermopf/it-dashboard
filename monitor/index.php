@@ -1,185 +1,90 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>IT Dashboard</title>
-    <meta name="viewport" content="width=1920">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta charset="utf-8"/>
-    <!-- Fonts -->
-    <link href='//fonts.googleapis.com/css?family=Roboto+Condensed:300,400' rel='stylesheet' type='text/css'>
-    <link href='//fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css'>
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="./img/favicon.ico" type="image/x-ico; charset=binary"/>
-    <link rel="icon" href="./img/favicon.ico" type="image/x-ico; charset=binary"/>
-    <!-- CSS Libs -->
-    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="lib/css/animate.min.css">
-    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap-switch.min.css">
-    <link rel="stylesheet" type="text/css" href="lib/css/checkbox3.min.css">
-    <!-- CSS App -->
-    <link rel="stylesheet" type="text/css" href="css/style.css?random=<?php echo uniqid(); ?>">
-<!--    <link rel="stylesheet" type="text/css" href="css/themes/flat-blue.css?random=--><?php //echo uniqid(); ?><!--">-->
-    <link rel="stylesheet" type="text/css" href="css/themes/darkmode.css?random=<?php echo uniqid(); ?>">
-</head>
-
 <?php
-$ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
-if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; rv:11.0') !== false)) {
-    echo "<div class='row'>";
-    echo "<div class='col-lg-2 col-lg-offset-5'>";
-    echo "<img src='./img/ie.png' class='img-responsive'/>";
-    echo "<div class='panel panel-danger'>";
-    echo "<div class='panel-heading'>Browser nicht unterstützt</div>";
-    echo "<div class='panel-body'>Bitte nutze einen richtigen Browser...</div>";
-    echo "</div>";
-    echo "</div>";
-    echo "</div>";
-    die();
+/**
+ * Monitor (Signage) – App-Shell.
+ *
+ * Lädt das mit Vite gebaute Frontend aus monitor/dist/. Fehlt der Build oder wird ?legacy=1 übergeben,
+ * wird die bisherige Oberfläche (legacy.php) ausgeliefert – das ist zugleich der Rollback-Pfad.
+ * Die URL für Yodeck bleibt unverändert: /monitor/?Name=<Dashboard>.
+ */
+require_once getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php';
+require_once __DIR__ . '/../lib/security.php';
+
+$manifestFile = __DIR__ . '/dist/.vite/manifest.json';
+$forceLegacy = isset($_GET['legacy']) || (defined('MONITOR_FORCE_LEGACY') && MONITOR_FORCE_LEGACY);
+$entry = null;
+if (!$forceLegacy && is_file($manifestFile)) {
+    $manifest = json_decode((string)file_get_contents($manifestFile), true);
+    $entry = is_array($manifest) ? ($manifest['src/main.ts'] ?? null) : null;
 }
+if (!$entry || empty($entry['file']) || !is_file(__DIR__ . '/dist/' . $entry['file'])) {
+    require __DIR__ . '/legacy.php';
+    return;
+}
+
+$wsUrl = defined('WEBSOCKET_URL') ? WEBSOCKET_URL : '';
+$wsOrigin = '';
+if ($wsUrl !== '' && ($parts = parse_url($wsUrl)) && isset($parts['scheme'], $parts['host'])) {
+    $wsOrigin = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+}
+
+// Nur nicht-geheime Werte an den Browser geben.
+$config = array(
+    'wsUrl' => $wsUrl,
+    'assetPath' => './',
+    'cachePath' => './cache/',
+);
+if (defined('MONITOR_OPTIONS') && is_array(MONITOR_OPTIONS)) {
+    $allowed = array('cachePath', 'alertPages', 'cycleSeconds', 'fetchTimeoutMs', 'prefetchLeadSeconds', 'maxActiveVideos',
+        'chartAnimation', 'snowFlakes', 'toastScripts', 'recovery', 'wsWatchdogMs', 'uiScale', 'pages');
+    foreach (MONITOR_OPTIONS as $k => $v) {
+        if (in_array($k, $allowed, true)) {
+            if ($k === 'cachePath' && !preg_match('#^[A-Za-z0-9_./-]{1,200}/$#', (string)$v)) {
+                continue;
+            }
+            $config[$k] = $v;
+        }
+    }
+}
+
+$csp = implode('; ', array(
+    "default-src 'self'",
+    // 'unsafe-eval': Inline-Skripte der Legacy-Ansichten werden per new Function() in eigenem Scope ausgeführt.
+    "script-src 'self' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src * data: blob:",
+    "media-src * blob:",
+    "connect-src 'self'" . ($wsOrigin !== '' ? ' ' . $wsOrigin : ' ws: wss:'),
+    "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+));
+if (defined('MONITOR_CSP')) {
+    $csp = (string)MONITOR_CSP;
+}
+send_security_headers($csp);
+header('Cache-Control: no-cache');
+header('Content-Type: text/html; charset=utf-8');
+
+$css = isset($entry['css']) && is_array($entry['css']) ? $entry['css'] : array();
 ?>
-
-<body class="flat-blue">
-<!--    <div>-->
-<!--        <audio id="radiostream" src="https://ndr-ndr1niedersachsen-hannover.cast.addradio.de/ndr/ndr1niedersachsen/hannover/mp3/128/stream.mp3"></audio>-->
-<!--    </div>-->
-<div class="app-container">
-    <div class="row content-container">
-        <nav class="navbar navbar-default navbar-fixed-top navbar-top">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-expand-toggle">
-                        <i class="fa fa-bars icon"></i>
-                    </button>
-                    <ol class="breadcrumb navbar-breadcrumb">
-                        <li class="active">IT-Dashboard</li>
-                        <li id="Pageheader"></li>
-                        <li>Seitenwechsel in: <span id="page-timer"></span></li>
-                    </ol>
-                </div>
-                <ul class="nav navbar-nav navbar-right">
-                    <button type="button" class="navbar-right-expand-toggle pull-right visible-xs">
-                        <i class="fa fa-times icon"></i>
-                    </button>
-                    <li class="dropdown profile">
-                        <a href="#">
-                            <div id="clock" class="navbar-brand"></div>
-                        </a>
-                    </li>
-                </ul>
-                <div id="cat">
-                </div>
-            </div>
-            <div id="loadingbar"></div>
-        </nav>
-        <div class="side-menu sidebar-inverse">
-            <nav class="navbar navbar-default" role="navigation">
-                <div class="side-menu-container">
-                    <div class="navbar-header">
-                        <a class="navbar-brand" href="#">
-                            <i class="icon fas fa-tachometer-alt"></i>
-                            <div class="title">IT Dashboard</div>
-                        </a>
-                    </div>
-                    <ul id="navigation" class="nav navbar-nav">
-                        <li class="active">
-                            <a href="javascript:ButtonPage(1);">
-                                <i class="icon fas fa-cloud"></i><span class="title">Temperatur</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(2);">
-                                <i class="icon fas fa-life-ring"></i><span class="title">helpLine</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(3);">
-                                <i class="icon fas fa-chart-bar"></i><span class="title">Performance</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(4);">
-                                <i class="icon fas fa-chart-bar"></i><span class="title">VMware</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(5);">
-                                <i class="icon fas fa-bell"></i><span class="title">SCOM</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(6);">
-                                <i class="icon fas fa-save"></i><span class="title">Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(7);">
-                                <i class="icon fas fa-code-branch"></i><span class="title">M365</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(8);">
-                                <i class="icon fas fa-wrench"></i><span class="title">Updates</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:ButtonPage(9);">
-                                <i class="icon fas fa-poo"></i><span class="title">DERDACK</span>
-                            </a>
-                        </li>
-						<li>
-                            <a href="javascript:ButtonPage(10);">
-                                <i class="icon fas fa-tachometer-alt"></i><span class="title">Julian-O-Meter</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <!-- /.navbar-collapse -->
-            </nav>
-        </div>
-        <!-- Modal -->
-        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-            <div class="modal-dialog" role="document" style="width: 50%;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title h1 text-center" id="myModalLabel">
-                            Modal title
-                        </h4>
-                    </div>
-                    <div class="modal-body">
-                        <div id="modalimage"></div>
-                        <div id="modalbodytext" class="h2" style="word-wrap: break-word;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Main Content -->
-        <div class="container-fluid">
-            <div class="side-body padding-top">
-                <!--Load AJAX-->
-                <div id="ajax">
-                    <h1 class="text-center"><i class="fa fa-refresh fa-spin fa-3x fa-fw margin-bottom"></i></h1>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="toast"><div id="toastimg"></div><div id="toastdesc"></div></div>
-    <div id="buscontainer"><img id="bus" class="flip" src="./img/bus.gif"></div>
-    <div>
-        <!-- Javascript Libs -->
-        <script type="text/javascript" src="lib/js/jquery.min.js"></script>
-        <script type="text/javascript" src="lib/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="lib/js/bootstrap-switch.min.js"></script>
-        <script type="text/javascript" src="lib/js/jquery.matchHeight-min.js"></script>
-        <script type="text/javascript" src="lib/js/Chart.bundle.js"></script>
-        <script type="text/javascript" src="../config.js.php"></script>
-
-        <!-- Javascript -->
-        <script type="text/javascript" src="js/app.js?random=<?php echo uniqid(); ?>"></script>
-
-        <script src='./js/snowfall.min.jquery.js'></script>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>IT-Dashboard</title>
+    <link rel="icon" href="./img/favicon.ico">
+<?php foreach ($css as $file): ?>
+    <link rel="stylesheet" href="./dist/<?= h($file) ?>">
+<?php endforeach; ?>
+    <link rel="modulepreload" href="./dist/<?= h($entry['file']) ?>">
+    <script id="dashboard-config" type="application/json"><?= json_for_html($config) ?></script>
+</head>
+<body>
+<div id="app"></div>
+<noscript>JavaScript wird benötigt.</noscript>
+<script type="module" src="./dist/<?= h($entry['file']) ?>"></script>
 </body>
 </html>

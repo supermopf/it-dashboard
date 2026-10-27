@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IT-Dashboard (Dev)</title>
+    <!-- Nur für `npm run dev` / Tests. In Produktion erzeugt monitor/index.php die Shell. -->
+    <script id="dashboard-config" type="application/json">{"assetPath": "/monitor/", "cachePath": "./cache/"}</script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

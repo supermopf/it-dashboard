@@ -1,0 +1,89 @@
+/*
+ * Design-Tokens – IT-Operations-Dashboard (dunkel, ruhig, gut lesbar aus mehreren Metern).
+ * Alle Maße in rem; html skaliert über --ui-scale (1 = Full HD, 2 = 4K).
+ */
+:root {
+  color-scheme: dark;
+
+  /* Flächen */
+  --color-bg: #0b0e12;
+  --color-surface: #12171d;
+  --color-surface-raised: #182029;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --color-text: #e9edf2;
+  --color-text-secondary: #a3acb9;
+  --color-text-muted: #6f7a88;
+
+  /* Akzent (nur Interaktion/Hervorhebung, nie Status) */
+  --color-accent: #5b9bff;
+  --color-accent-soft: rgba(91, 155, 255, 0.14);
+
+  /* Status – nur für Statusinformationen, immer zusammen mit Icon/Text */
+  --color-success: #3fb27f;
+  --color-success-soft: rgba(63, 178, 127, 0.14);
+  --color-warning: #e3a535;
+  --color-warning-soft: rgba(227, 165, 53, 0.15);
+  --color-danger: #f0584f;
+  --color-danger-soft: rgba(240, 88, 79, 0.15);
+  --color-info: #5fb3f6;
+  --color-info-soft: rgba(95, 179, 246, 0.14);
+
+  /* Abstände (4er-Raster) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radien */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem; /* 12 px */
+  --radius-lg: 0.875rem; /* 14 px */
+  --radius-pill: 999px;
+
+  /* Schatten – sehr dezent, nie animiert */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  /* Typografie */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Liberation Sans", "DejaVu Sans", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "DejaVu Sans Mono", Consolas, monospace;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.875rem;
+  --fs-2xl: 2.5rem;
+  --fs-kpi: 3.75rem;
+  --lh-tight: 1.15;
+  --lh-normal: 1.4;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Bewegung (Emil Kowalski: kurz, ease-out für Eintritt, Exit kürzer als Enter) */
+  --dur-fast: 120ms;
+  --dur-enter: 180ms;
+  --dur-exit: 140ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease: ease;
+
+  /* Layout */
+  --topbar-height: 4.25rem;
+  --nav-height: 3rem;
+  --stage-padding: var(--space-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-enter: 0ms;
+    --dur-exit: 0ms;
+  }
+}

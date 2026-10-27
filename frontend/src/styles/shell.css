@@ -1,0 +1,377 @@
+/* App-Shell: Kopfzeile, Bühne, Ansichtsübergänge, Overlays */
+
+#app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Kopfzeile ---- */
+.topbar {
+  position: relative;
+  z-index: 10;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  contain: layout paint;
+}
+.topbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: var(--topbar-height);
+  padding: 0 var(--space-5);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-lg);
+  white-space: nowrap;
+}
+.brand-icon {
+  color: var(--color-accent);
+}
+.topbar-context {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  min-width: 0;
+  flex: 1;
+}
+.topbar-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-freshness {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topbar-freshness.is-stale {
+  color: var(--color-warning);
+}
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  white-space: nowrap;
+}
+.topbar-countdown {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  min-width: 8.5em;
+  text-align: right;
+}
+.topbar-countdown.is-off {
+  color: var(--color-text-muted);
+}
+.topbar-clock {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  border: 1px solid transparent;
+}
+.chip-ok {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+.chip-warn {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+.chip-error {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+/* ---- Navigation ---- */
+.topbar-nav {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-4) var(--space-2);
+  height: var(--nav-height);
+  overflow: hidden;
+}
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-item.is-active {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.nav-status {
+  font-weight: var(--fw-semibold);
+}
+/* Status nie nur über Farbe: Warn-Icon-Zeichen „!“ plus Farbe, OK mit Häkchen */
+.nav-item.has-alert {
+  color: var(--color-warning);
+}
+.nav-item.has-alert .nav-status {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 50%;
+  background: var(--color-warning);
+  color: #1a1204;
+  font-size: var(--fs-xs);
+}
+.nav-item.is-ok .nav-icon {
+  color: var(--color-success);
+}
+
+/* ---- Countdown-Balken (transform statt width) ---- */
+.cycle-progress {
+  position: relative;
+  height: 2px;
+  background: var(--color-border);
+}
+.cycle-progress-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+  /* lineare Bewegung, da konstante Geschwindigkeit (1 s Takt) */
+  transition: transform 1s linear;
+}
+.critter-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  pointer-events: none;
+}
+.critter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3.5rem;
+  width: auto;
+  transform: translate3d(calc(var(--p, 0) * (100vw - 6rem)), 0, 0);
+  transition: transform 1s linear;
+}
+
+/* ---- Bühne & Ansichtswechsel ---- */
+.stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.view {
+  position: absolute;
+  inset: 0;
+  padding: var(--stage-padding);
+  overflow: hidden;
+  opacity: 0;
+  transform: translate3d(0, 0.625rem, 0);
+  z-index: 1;
+}
+.view.is-entering {
+  visibility: visible;
+}
+.view.is-active {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  z-index: 2;
+  transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out);
+}
+.view.is-leaving {
+  opacity: 0;
+  transform: translate3d(0, -0.5rem, 0);
+  z-index: 1;
+  transition: opacity var(--dur-exit) var(--ease-out), transform var(--dur-exit) var(--ease-out);
+  pointer-events: none;
+}
+
+/* ---- Overlays ---- */
+.overlay-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.snow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.offline-banner {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: min(90vw, 70rem);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(240, 88, 79, 0.35);
+  background: #2a1515;
+  color: #ffd9d6;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  box-shadow: var(--shadow-2);
+  opacity: 0;
+  transform: translate3d(-50%, 0.5rem, 0);
+  transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out);
+}
+.offline-banner.is-visible {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+}
+.offline-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: min(80vw, 56rem);
+  padding: var(--space-2) var(--space-5) var(--space-2) var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-2);
+  opacity: 0;
+  transform: translate3d(-50%, 1rem, 0);
+  transition: opacity var(--dur-exit) var(--ease-out), transform var(--dur-exit) var(--ease-out);
+  pointer-events: none;
+}
+.song-toast.is-visible {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+  transition-duration: var(--dur-enter);
+}
+.song-icon-wrap {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.song-icon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.song-icon:not([hidden]) + .song-fallback {
+  display: none;
+}
+.song-text {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bus/Brötchen: konstante Fahrt → linear, transform statt left */
+.bus-lane {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4rem;
+  z-index: 20;
+  pointer-events: none;
+}
+.bus-car {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: translate3d(-12rem, 0, 0);
+  transition: transform 8.5s linear;
+}
+.bus-lane.to-right .bus-car {
+  transform: translate3d(calc(100vw + 2rem), 0, 0);
+}
+.bus-lane.to-left .bus-car {
+  transform: translate3d(-12rem, 0, 0);
+}
+.bus-img {
+  height: 3.8rem;
+  width: auto;
+}
+.bus-img.flip {
+  transform: scaleX(-1);
+}
+
+.debug-overlay {
+  position: fixed;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 100;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.8);
+  color: #9fe6b8;
+  font: 0.75rem/1.35 var(--font-mono);
+  pointer-events: none;
+  white-space: pre;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cycle-progress-bar,
+  .critter,
+  .bus-car {
+    transition: none;
+  }
+}

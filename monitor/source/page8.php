@@ -112,25 +112,31 @@ $UbuntuSummary = array(
     "Outdated" => 0
 );
 
-$checkmk_url = rtrim(CHECKMK_BASE_URL, '/') . "/check_mk/view.py?" . http_build_query(array(
-        "output_format" => "json_export",
-        "view_name" => "ubuntu_updates_reboots"
-    ));
+// Fehlen die Checkmk-Konstanten in config.php, wird der Ubuntu-Teil übersprungen statt mit
+// „Undefined constant“ abzubrechen (docs/AUDIT.md S15).
+$checkmk_response = false;
+$checkmk_status = 0;
+if (defined('CHECKMK_BASE_URL') && CHECKMK_BASE_URL !== '') {
+    $checkmk_url = rtrim(CHECKMK_BASE_URL, '/') . "/check_mk/view.py?" . http_build_query(array(
+            "output_format" => "json_export",
+            "view_name" => "ubuntu_updates_reboots"
+        ));
 
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $checkmk_url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-curl_setopt($ch, CURLOPT_USERPWD, CHECKMK_USER . ':' . CHECKMK_SECRET);
-//PHP curl does not use the Windows cert store, so the internal root CA is supplied explicitly
-if (defined('CA_BUNDLE') && is_readable(CA_BUNDLE)) {
-    curl_setopt($ch, CURLOPT_CAINFO, CA_BUNDLE);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $checkmk_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_setopt($ch, CURLOPT_USERPWD, (defined('CHECKMK_USER') ? CHECKMK_USER : '') . ':' . (defined('CHECKMK_SECRET') ? CHECKMK_SECRET : ''));
+    //PHP curl does not use the Windows cert store, so the internal root CA is supplied explicitly
+    if (defined('CA_BUNDLE') && is_readable(CA_BUNDLE)) {
+        curl_setopt($ch, CURLOPT_CAINFO, CA_BUNDLE);
+    }
+    $checkmk_response = curl_exec($ch);
+    $checkmk_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 }
-$checkmk_response = curl_exec($ch);
-$checkmk_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
 
 if ($checkmk_status === 200 && $checkmk_response !== false) {
     $checkmk_rows = json_decode($checkmk_response, true);
