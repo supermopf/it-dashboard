@@ -42,3 +42,4 @@ radar.png
 /frontend/.vite
 /monitor/dist
 /frontend/e2e-last.log
+/websocket/device_radio.json

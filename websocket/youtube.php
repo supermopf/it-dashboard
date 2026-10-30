@@ -26,6 +26,37 @@ $totalPages = ceil($totalCount / $perPage);
     <link rel="stylesheet" type="text/css" href="../monitor/lib/css/bootstrap-slider.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <link rel="stylesheet" type="text/css" href="./css/style.css">
+    <style>
+        /* Steuerleiste bleibt beim Scrollen durch die History unter der Navigationsleiste stehen */
+        .yt-sticky {
+            position: sticky;
+            top: 50px;
+            z-index: 1020;
+            margin-top: 68px;
+            padding-top: 12px;
+            background: rgba(26, 26, 26, 0.82);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            backdrop-filter: blur(16px) saturate(160%);
+        }
+        .yt-sticky .panel { margin-bottom: 12px; }
+        /* Weiche Kante statt harter Linie, nur solange Inhalt darunter durchläuft */
+        .yt-sticky::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -16px;
+            height: 16px;
+            background: linear-gradient(rgba(0, 0, 0, 0.35), transparent);
+            opacity: 0;
+            transition: opacity 160ms ease-out;
+            pointer-events: none;
+        }
+        .yt-sticky.is-stuck::after { opacity: 1; }
+        @media (prefers-reduced-transparency: reduce) {
+            .yt-sticky { background: #1a1a1a; -webkit-backdrop-filter: none; backdrop-filter: none; }
+        }
+    </style>
 </head>
 <body>
 
@@ -39,7 +70,7 @@ include('navbar.php');
 <div class="container-fluid">
     
     <!-- YouTube Control Panel -->
-    <div class="row" style="margin-top: 80px;">
+    <div class="row yt-sticky" id="yt-controls">
         <div class="col-lg-offset-1 col-lg-10">
             <div class="panel panel-success">
                 <div class="panel-heading">
@@ -168,6 +199,13 @@ include('navbar.php');
 <script src="../monitor/lib/js/bootstrap-slider.min.js"></script>
 <script type="text/javascript" src="../config.js.php"></script>
 <script>
+    // Schatten unter der angehefteten Steuerleiste erst zeigen, wenn Inhalt darunter scrollt
+    (function () {
+        var bar = document.getElementById('yt-controls');
+        var update = function () { bar.classList.toggle('is-stuck', window.scrollY > 16); };
+        window.addEventListener('scroll', update, { passive: true });
+        update();
+    })();
     var websocket;
     var sliding = false;
     var reconnectAttempts = 0;

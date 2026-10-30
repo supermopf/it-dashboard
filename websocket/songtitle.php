@@ -467,27 +467,71 @@ function getDiviconMetadata($streamUrl)
     return "";
 }
 
+/** Songtitel eines Streams ermitteln (icy-Metadaten → OnlineRadioBox → divicon/icecast). Leer = unbekannt. */
+function getSongTitle($radiostationUrl)
+{
+    try {
+        error_log("[SongTitle] Attempting to extract song title from stream $radiostationUrl");
+
+        // Try standard icy-metadata first
+        $result = getMp3StreamTitle($radiostationUrl);
+
+        // If that fails, try OnlineRadioBox scraper (works for many stations)
+        if (empty($result)) {
+            error_log("[SongTitle] Standard metadata failed, trying OnlineRadioBox scraper");
+            $result = getRadioBoxMetadata($radiostationUrl);
+        }
+
+        // If that fails too, try divicon/icecast APIs
+        if (empty($result)) {
+            error_log("[SongTitle] RadioBox failed, trying divicon/icecast APIs");
+            $result = getDiviconMetadata($radiostationUrl);
+        }
+
+        // Validate format: "Artist - Title"
+        if ($result && preg_match("/^.+?\s*-\s*.+$/", $result)) {
+            error_log("[SongTitle] Valid song title found: $result");
+            return $result;
+        }
+        if ($result && $result !== 'radiohannover-live' && !preg_match('/^radio.*-live$/i', $result)) {
+            // Accept any non-empty result that's not just the station name
+            error_log("[SongTitle] Song title found (non-standard format): $result");
+            return $result;
+        }
+        error_log("[SongTitle] INFO: Station does not provide song metadata - sending empty update");
+    } catch (Exception $e) {
+        error_log("[SongTitle] ERROR: Failed to get song title - " . $e->getMessage());
+    }
+    return "";
+}
+
 // Main execution
 $host = '127.0.0.1';
-$port = 9000;
+$port = defined('WEBSOCKET_PORT') ? (int)WEBSOCKET_PORT : 9000;
 $origin = DASHBOARD_BASE_URL . "/monitor/";
-$songTitle = "";
 
 try {
     // Connect and wait for radio station info
     error_log("[SongTitle] Connecting to WebSocket server $host:$port");
     $sock = connectWebSocket($host, $port, $origin);
-    
+
     $radiostationUrl = null;
+    $deviceStations = array();
     $timeout = time() + 10; // 10 second timeout
-    
+
     while (!$radiostationUrl && time() < $timeout) {
-        $wsdata = fread($sock, 2000);
+        $wsdata = fread($sock, 8000);
         $msg = json_decode(hybi10Decode($wsdata));
-        
+
         if (isset($msg->type) && $msg->type == "update" && isset($msg->Radiostation)) {
             $radiostationUrl = $msg->Radiostation;
             error_log("[SongTitle] Received radio station URL: $radiostationUrl");
+            // Sender, die einzelne Dashboards abweichend eingestellt haben (!dvar, siehe server.php)
+            foreach ((array)($msg->DeviceRadio ?? array()) as $settings) {
+                if (!empty($settings->Radiostation) && $settings->Radiostation !== $radiostationUrl) {
+                    $deviceStations[$settings->Radiostation] = true;
+                }
+            }
         }
     }
     // Don't close socket yet - we'll reuse it to send the song title
@@ -496,59 +540,25 @@ try {
         error_log("[SongTitle] WARNING: No radio station URL received from WebSocket");
     }
 
-    // Get current song title from stream
-    if ($radiostationUrl) {
-        try {
-            error_log("[SongTitle] Attempting to extract song title from stream");
-            
-            // Try standard icy-metadata first
-            $result = getMp3StreamTitle($radiostationUrl);
-            
-            // If that fails, try OnlineRadioBox scraper (works for many stations)
-            if (empty($result)) {
-                error_log("[SongTitle] Standard metadata failed, trying OnlineRadioBox scraper");
-                $result = getRadioBoxMetadata($radiostationUrl);
-            }
-            
-            // If that fails too, try divicon/icecast APIs
-            if (empty($result)) {
-                error_log("[SongTitle] RadioBox failed, trying divicon/icecast APIs");
-                $result = getDiviconMetadata($radiostationUrl);
-            }
-            
-            // Validate format: "Artist - Title"
-            if ($result && preg_match("/^.+?\s*-\s*.+$/", $result)) {
-                $songTitle = $result;
-                error_log("[SongTitle] Valid song title found: $songTitle");
-            } else if ($result && $result !== 'radiohannover-live' && !preg_match('/^radio.*-live$/i', $result)) {
-                // Accept any non-empty result that's not just the station name
-                $songTitle = $result;
-                error_log("[SongTitle] Song title found (non-standard format): $songTitle");
-            } else {
-                error_log("[SongTitle] INFO: Station does not provide song metadata - sending empty update");
-                $songTitle = "";
-            }
-        } catch (Exception $e) {
-            error_log("[SongTitle] ERROR: Failed to get song title - " . $e->getMessage());
-        }
+    $messages = array();
+    // Globaler Sender: wie bisher über !var SongTitle
+    $songTitle = $radiostationUrl ? getSongTitle($radiostationUrl) : "";
+    error_log("[SongTitle] Preparing to send song title to WebSocket: " . ($songTitle ?: "(empty)"));
+    $messages[] = "!var SongTitle " . urlencode($songTitle);
+    // Abweichende Sender einzelner Dashboards: !stitle <Sender> <Titel>
+    foreach (array_keys($deviceStations) as $station) {
+        $messages[] = "!stitle " . urlencode($station) . " " . urlencode(getSongTitle($station));
     }
 
-    // Send song title back to WebSocket server (reuse existing connection)
-    error_log("[SongTitle] Preparing to send song title to WebSocket: " . ($songTitle ?: "(empty)"));
-    
-    $messageData = [
-        "type" => "command",
-        "message" => "!var SongTitle " . urlencode($songTitle)
-    ];
-    
-    error_log("[SongTitle] Message to send: " . json_encode($messageData));
-    
     // Reuse the connection we opened earlier
-    $encoded = hybi10Encode(json_encode($messageData));
-    fwrite($sock, $encoded);
+    foreach ($messages as $message) {
+        error_log("[SongTitle] Message to send: " . $message);
+        $encoded = hybi10Encode(json_encode(array("type" => "command", "message" => $message)));
+        fwrite($sock, $encoded);
+    }
     fread($sock, 2000); // Read confirmation
     fclose($sock); // Now close it
-    
+
     error_log("[SongTitle] Script completed successfully");
 
 } catch (Exception $e) {

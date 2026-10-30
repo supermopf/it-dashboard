@@ -113,9 +113,24 @@ foreach ($servers as $name => $data) {
 }
 ?>
 
+<?php
+// X-Achse an den Daten ausrichten statt an der Uhrzeit des Displays: Die Seite wird vorgerendert und erst
+// Minuten später angezeigt – mit „jetzt − 2 h … jetzt“ fehlten links Werte und rechts blieb eine Lücke.
+$axisMin = null;
+$axisMax = null;
+foreach ($servers as $rows) {
+    foreach ($rows as $row) {
+        $t = $row["Timestamp"]->getTimestamp();
+        $axisMin = $axisMin === null ? $t : min($axisMin, $t);
+        $axisMax = $axisMax === null ? $t : max($axisMax, $t);
+    }
+}
+$axisMin = ($axisMin ?? time() - 7200) * 1000;
+$axisMax = ($axisMax ?? time()) * 1000;
+?>
 <script>
-    var minDate = new Date();
-    minDate.setHours(minDate.getHours() - 2);
+    var minDate = new Date(<?= (int)$axisMin ?>);
+    var maxDate = new Date(<?= (int)$axisMax ?>);
 
     var options = {
         scales: {
@@ -124,7 +139,7 @@ foreach ($servers as $name => $data) {
                 time: {
                     unit: 'minute',
                     min: minDate,
-                    max: Date.now(),
+                    max: maxDate,
                     displayFormats: {
                         minute: 'HH:mm'
                     },
@@ -144,6 +159,9 @@ foreach ($servers as $name => $data) {
                     fontSize: 15
                 }
             }]
+        },
+        layout: {
+            padding: { left: 0, right: 12 }
         },
         borderCapStyle: 'butt',
         lineTension: 0,

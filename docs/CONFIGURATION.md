@@ -75,12 +75,39 @@ Ohne `ADMIN_ALLOWED_*` ist der Schutz inaktiv (bisheriges Verhalten). Geschützt
 | `maxActiveVideos` | `1` | Maximal gleichzeitig spielende Videos |
 | `chartAnimation` | `false` | Chart.js-Animationen (auf dem Pi aus lassen) |
 | `snowFlakes` | `60` | Schneeflocken (max. 200) |
+| `spooky` | `{from: 20, to: 6}` | Nachtfenster des Gruselmodus im Modus „Auto“ (Stunden, über Mitternacht möglich) |
 | `toastScripts` | `'reload-only'` | `'legacy'` führt `<script>` im ToastBody aus (unsicher, nur Übergang) |
 | `recovery` | `{enabled: true, wsDownMs: 600000, maxReloadsPerHour: 3, heapLimitMb: 0}` | Recovery-Reload, siehe ARCHITECTURE.md |
 | `wsWatchdogMs` | `10000` | Watchdog für halb-offene Verbindungen |
 | `uiScale` | `'auto'` | `1` = Full HD, `2` = 4K, `'auto'` = 2 ab 3000 px Breite |
 | `pages` | 10 Standardseiten | Titel/Icons der Navigation: `[{id:'1', title:'Temperatur', icon:'cloud'}, …]` |
 | `cachePath` | `'./cache/'` | Pfad der Ansichten relativ zu `monitor/` |
+
+## OMD/Checkmk, Wetter und Seiten-Zeitfenster
+
+| Konstante | Standard | Wirkung |
+|---|---|---|
+| `CHECKMK_BASE_URL`, `CHECKMK_USER`, `CHECKMK_SECRET` | – | REST-API (`lib/checkmk.php`, Bearer-Auth mit Automationsbenutzer); auch für Seite 8 |
+| `OMD_SITE` | letzter Pfadteil der Basis-URL | Site-Name für die Metrik-Abfrage |
+| `OMD_TEMPERATURE_SENSORS` | – | Temperaturseite: `Anzeigename => [host, temperature, humidity, …]`. Status und 2-h-Verlauf kommen direkt aus OMD. Ohne Eintrag: Tabelle `IT-Dashboard_APC-Temperature` |
+| `OMD_ALERTS_ON_SCOM` | `true` | SCOM-Seite um OMD-Probleme ergänzen (nicht quittiert, nicht in Wartung; markiert „OMD“) |
+| `OMD_ALERTS_INCLUDE_WARNINGS` | `true` | `false` = nur kritische OMD-Probleme |
+| `YAHOO_WEATHER_RAPIDAPI_KEY` | – | Wetter von Yahoo (über RapidAPI, 10 min Cache). Ohne Key: OpenWeatherMap (`APIKEY_openweathermap`) |
+| `YAHOO_WEATHER_RAPIDAPI_HOST` | `yahoo-weather5.p.rapidapi.com` | RapidAPI-Host der Yahoo-Wetter-API |
+| `WEATHER_LOCATION`, `WEATHER_LAT`, `WEATHER_LON` | Isernhagen, 52.48, 9.86 | Ort für Wetter und Mittelpunkt des Regenradars |
+| `WEATHER_RADAR_ZOOM` | `7` | Zoomstufe der Radarkarte (RainViewer, Kacheln lädt der Browser direkt) |
+| `PAGE_SCHEDULES` | Seite 10: Mo/Di/Fr 12–18 Uhr | Zeitfenster je Seite; außerhalb wird die Seite in der Rotation übersprungen |
+
+**Seitenrelevanz:** Quellseiten können `<!-- dashboard:relevant=0 -->` ausgeben (`lib/pages.php`); `rendercache.php`
+übernimmt das in `page_status.json`, der Server überspringt die Seite. Genutzt von SCOM (keine Meldungen) und
+Backup (100 % erfolgreich).
+
+**Radio je Dashboard:** Im Adminpanel unter „Radio & Fernbedienung“ ein Ziel wählen. Technisch:
+`!dvar <Dashboard> <Radio|Radiostation|RadioStationIcon|Radiovolume> <Wert>` bzw. `!dvar <Dashboard> reset`
+(Name und Wert URL-kodiert). Die Einstellungen liegen in `websocket/device_radio.json` und überleben Neustarts.
+`songtitle.php` ermittelt die Titel aller verwendeten Sender (`!stitle`).
+
+**Gruselmodus:** `!var Spooky auto|on|off` (Adminpanel → Modi). „Auto“ = im Nachtfenster aus `MONITOR_OPTIONS.spooky`.
 
 ## URL-Parameter des Monitors
 

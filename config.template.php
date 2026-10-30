@@ -108,3 +108,27 @@ $Default_Connection = array("Database" => DASHBOARD_SQL_INSTANCE, "CharacterSet"
 
 
 
+
+// OMD/Checkmk (REST-API, nutzt CHECKMK_BASE_URL/CHECKMK_USER/CHECKMK_SECRET von oben)
+// define("OMD_SITE", 'mysite');                         // Standard: letzter Pfadteil von CHECKMK_BASE_URL
+// Temperaturseite: Sensoren der Rechenzentren direkt aus OMD (Status + Verlauf 2 h). Ohne Eintrag: Tabelle IT-Dashboard_APC-Temperature.
+// define("OMD_TEMPERATURE_SENSORS", array(
+//     'CECIL'           => array('host' => 'apc-cecil',   'temperature' => 'Temperature Sensor 1', 'humidity' => 'Humidity Sensor 1'),
+//     'Gerberstraße OG' => array('host' => 'apc-gerber-og', 'temperature' => 'Temperature Sensor 1', 'humidity' => 'Humidity Sensor 1'),
+//     // optional je Sensor: 'humidity_host', 'temperature_metric' (Standard 'temp'), 'humidity_metric' (Standard 'humidity')
+// ));
+// define("OMD_ALERTS_ON_SCOM", true);                   // SCOM-Seite um OMD-Probleme ergänzen (Standard: an)
+// define("OMD_ALERTS_INCLUDE_WARNINGS", true);          // false = nur kritische OMD-Probleme
+
+// Wetter: Yahoo Weather über RapidAPI (sonst OpenWeatherMap mit APIKEY_openweathermap)
+// define("YAHOO_WEATHER_RAPIDAPI_KEY", '');
+// define("YAHOO_WEATHER_RAPIDAPI_HOST", 'yahoo-weather5.p.rapidapi.com');
+// define("WEATHER_LOCATION", 'Isernhagen');
+// define("WEATHER_LAT", 52.48);
+// define("WEATHER_LON", 9.86);
+// define("WEATHER_RADAR_ZOOM", 7);
+
+// Zeitfenster je Seite (ISO-Wochentage 1 = Mo … 7 = So). Standard: Julian-O-Meter Mo/Di/Fr 12–18 Uhr.
+// define("PAGE_SCHEDULES", array(10 => array('days' => array(1, 2, 5), 'from' => '12:00', 'to' => '18:00')));
+
+// Gruselmodus: in MONITOR_OPTIONS z. B. 'spooky' => array('from' => 20, 'to' => 6) (Standard 20–6 Uhr, Modus „Auto“)

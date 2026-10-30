@@ -71,7 +71,9 @@
 | `monitor/rendercache.php` | überschreibt den Cache nicht mehr mit leeren Seiten oder Fehlerdumps |
 | `websocket/logs.php` | „Logs löschen“ per POST-Button statt Link |
 | `websocket/features.php` | ungültige `action`/`ID` → HTTP 400 |
-| `control/app.js` | Reconnect mit Backoff statt Reload-Schleife; Wheel-Schalter zeigt den Wheel-Zustand |
+| `control/app.js` | Reconnect mit Backoff statt Reload-Schleife; Wheel-Schalter zeigt den Wheel-Zustand. Alle Funktionen gibt es zusätzlich im Adminpanel (`websocket/index.php`, inkl. Radio je Dashboard) |
+| `applications/` | **entfernt** (Desktop-Ansicht wurde nicht mehr genutzt) |
+| `websocket/weather.php` | **entfernt** – das Regenradar lädt der Browser direkt (RainViewer-Kacheln), Cronjob „Radarbild“ und `radar.png` entfallen |
 | `config.template.php` | fehlende Konstanten ergänzt, optionale Einstellungen dokumentiert |
 
 ## Unverändert

@@ -35,7 +35,7 @@ $config = array(
 );
 if (defined('MONITOR_OPTIONS') && is_array(MONITOR_OPTIONS)) {
     $allowed = array('cachePath', 'alertPages', 'cycleSeconds', 'fetchTimeoutMs', 'prefetchLeadSeconds', 'maxActiveVideos',
-        'chartAnimation', 'snowFlakes', 'toastScripts', 'recovery', 'wsWatchdogMs', 'uiScale', 'pages');
+        'chartAnimation', 'snowFlakes', 'spooky', 'toastScripts', 'recovery', 'wsWatchdogMs', 'uiScale', 'pages');
     foreach (MONITOR_OPTIONS as $k => $v) {
         if (in_array($k, $allowed, true)) {
             if ($k === 'cachePath' && !preg_match('#^[A-Za-z0-9_./-]{1,200}/$#', (string)$v)) {

@@ -12,6 +12,7 @@ import { Critters } from './features/critters';
 import { OfflineBanner } from './features/offline-banner';
 import { RadioController } from './features/radio';
 import { Snow } from './features/snow';
+import { Spooky } from './features/spooky';
 import { SongToast } from './features/song-toast';
 import { Topbar } from './features/topbar';
 import { UrgentToast, type UrgentPayload } from './features/urgent-toast';
@@ -51,6 +52,7 @@ const INITIAL: AppState = {
   SongTitle: '',
   RadioStationIcon: '',
   PageStatus: {},
+  Spooky: 'auto',
 };
 
 /** Kennzahlen für den Debug-Modus (werden auch im Normalbetrieb billig mitgezählt). */
@@ -78,6 +80,7 @@ export class App {
   private readonly critters: Critters;
   private readonly bus: Bus;
   private readonly snow: Snow;
+  private readonly spooky: Spooky;
   private readonly banner: OfflineBanner;
   private readonly guard: ReloadGuard;
   private readonly ctx: PanelContext;
@@ -142,11 +145,13 @@ export class App {
     this.banner = new OfflineBanner();
     const overlay = el('div', { class: 'overlay-layer' });
     this.snow = new Snow(overlay, cfg.snowFlakes);
+    this.spooky = new Spooky(this.scheduler, cfg.spooky);
 
     root.replaceChildren(
       this.topbar.element,
       main,
       this.bus.element,
+      this.spooky.element,
       this.song.element,
       this.banner.element,
       this.urgent.element,
@@ -291,9 +296,11 @@ export class App {
       case '!bus':
         if (this.named) this.bus.handle(arg.trim(), this.store.get().BusActive);
         break;
-      case '!songtitle':
-        this.song.replay();
+      case '!songtitle': {
+        const st = this.store.get();
+        if (this.radio.isPlaying) this.song.show(st.RadioStationIcon, st.SongTitle);
         break;
+      }
       case '!urgent':
         if (this.named) {
           try {
@@ -423,6 +430,7 @@ export class App {
       }
     });
     s.subscribe(['Snow'], (st) => this.snow.set(st.Snow));
+    s.subscribe(['Spooky'], (st) => this.spooky.setMode(st.Spooky));
     s.subscribe(['ws'], (st) => this.onWsState(st.ws));
   }
 

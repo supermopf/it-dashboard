@@ -10,6 +10,7 @@
 //
 require("../../config.php");
 require_once(__DIR__ . '/../../lib/security.php');
+require_once(__DIR__ . '/../../lib/pages.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 if ($conn) {
@@ -61,6 +62,11 @@ ORDER BY pullTime DESC
     echo "<pre>";
     die(print_r(sqlsrv_errors(), true));
 }
+
+$BackupTotal = (float)$status["Successful"] + (float)$status["Partially Successful"] + (float)$status["Failed"];
+$BackupPercent = $BackupTotal > 0 ? round((float)$status["Successful"] / $BackupTotal * 100, 2) : 0;
+// 100 % erfolgreich → Seite wird in der Rotation übersprungen (lib/pages.php)
+echo page_relevance_marker($BackupPercent < 100);
 ?>
 
 
@@ -110,13 +116,13 @@ ORDER BY pullTime DESC
 
                 //Get options from the center object in options
                 var centerConfig = chart.config.options.elements.center;
-                var fontStyle = centerConfig.fontStyle || 'Arial';
+                var fontStyle = centerConfig.fontStyle || Chart.defaults.global.defaultFontFamily;
                 var txt = centerConfig.text;
                 var color = centerConfig.color || '#000';
                 var sidePadding = centerConfig.sidePadding || 20;
                 var sidePaddingCalculated = (sidePadding / 100) * (chart.innerRadius * 2);
                 //Start with a base font of 30px
-                ctx.font = "30px " + fontStyle;
+                ctx.font = "600 30px " + fontStyle;
 
                 //Get the width of the string and also the width of the element minus 10 to give it 5px side padding
                 var stringWidth = ctx.measureText(txt).width;
@@ -135,7 +141,7 @@ ORDER BY pullTime DESC
                 ctx.textBaseline = 'middle';
                 var centerX = ((chart.chartArea.left + chart.chartArea.right) / 2);
                 var centerY = ((chart.chartArea.top + chart.chartArea.bottom) / 2);
-                ctx.font = fontSizeToUse + "px " + fontStyle;
+                ctx.font = "600 " + fontSizeToUse + "px " + fontStyle;
                 ctx.fillStyle = color;
 
                 //Draw text in center
@@ -172,9 +178,9 @@ ORDER BY pullTime DESC
             },
             elements: {
                 center: {
-                    text: '<?php echo round(@($status["Successful"] / ($status["Successful"] + $status["Partially Successful"] + $status["Failed"]) * 100), 2) . "%"; ?>',
+                    text: '<?php echo $BackupPercent . "%"; ?>',
                     color: '#12AF12',
-                    fontStyle: 'Roboto Condensed',
+                    fontStyle: Chart.defaults.global.defaultFontFamily,
                     sidePadding: 20 //Default 20 (as a percentage)
                 }
             }

@@ -175,6 +175,53 @@ require_admin_access(); ?>
         .toggle-container:has(input:checked) .toggle-status {
             color: #27ae60;
         }
+        /* Segmentierte Auswahl (Gruselmodus, Radio-Ziel) */
+        .segmented {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 8px;
+            background: #1a1a1a;
+            border: 1px solid #3c3c3c;
+        }
+        .segmented button {
+            min-width: 64px;
+            padding: 5px 12px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: #bdc3c7;
+            font-weight: 600;
+        }
+        .segmented button:active { transform: scale(0.97); }
+        .segmented button.active {
+            background: #3498db;
+            color: #fff;
+        }
+        .radio-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .radio-row > label {
+            min-width: 80px;
+            margin: 0;
+            color: #ecf0f1;
+        }
+        .radio-row select,
+        .radio-row input[type="range"] { flex: 1; }
+        .radio-hint {
+            margin: -4px 0 12px;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+        .radio-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .radio-actions .btn { margin: 0; }
+        .btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -208,14 +255,6 @@ include('navbar.php');
                             <span class="toggle-status" id="fun-status">Off</span>
                         </div>
                         <div class="toggle-container">
-                            <label><i class="fas fa-music"></i> Radio</label>
-                            <label class="switch">
-                                <input type="checkbox" id="radio-toggle">
-                                <span class="slider"></span>
-                            </label>
-                            <span class="toggle-status" id="radio-status">Off</span>
-                        </div>
-                        <div class="toggle-container">
                             <label><i class="fas fa-snowflake"></i> Snow</label>
                             <label class="switch">
                                 <input type="checkbox" id="snow-toggle">
@@ -230,6 +269,14 @@ include('navbar.php');
                                 <span class="slider"></span>
                             </label>
                             <span class="toggle-status" id="wheel-status">Off</span>
+                        </div>
+                        <div class="toggle-container">
+                            <label><i class="fas fa-spider"></i> Gruselmodus</label>
+                            <div class="segmented" id="spooky-mode" role="radiogroup" aria-label="Gruselmodus">
+                                <button type="button" data-mode="auto" title="Nachts automatisch">Auto</button>
+                                <button type="button" data-mode="on">An</button>
+                                <button type="button" data-mode="off">Aus</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -249,16 +296,12 @@ include('navbar.php');
                     <div class="control-section">
                         <h4><i class="fas fa-file"></i> Seiten Navigation</h4>
                         <div class="btn-grid">
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 1')">Seite 1</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 2')">Seite 2</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 3')">Seite 3</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 4')">Seite 4</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 5')">Seite 5</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 6')">Seite 6</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 7')">Seite 7</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 8')">Seite 8</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 9')">Seite 9</button>
-                            <button class="btn btn-primary btn-sm" onclick="sendCommand('!page 10')">Seite 10</button>
+                            <?php
+                            // !fpage setzt die Seite auch im Server (Countdown startet neu) – wie die frühere /control-Seite
+                            $nav = array(1 => 'Temperatur', 'helpLine', 'Performance', 'VMware', 'SCOM', 'Backup', 'M365', 'Updates', 'Derdack', 'Julian-O-Meter');
+                            foreach ($nav as $num => $title): ?>
+                                <button class="btn btn-primary btn-sm" onclick="sendCommand('!fpage <?= $num ?>')"><?= $num ?> · <?= h($title) ?></button>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                     
@@ -279,11 +322,6 @@ include('navbar.php');
                     <div class="control-section">
                         <h4><i class="fas fa-volume-up"></i> Lautstärke</h4>
                         <div class="volume-control">
-                            <label style="min-width: 80px;">Radio:</label>
-                            <input type="range" id="radio-volume" min="0" max="100" value="50" class="form-control">
-                            <span id="radio-volume-display" style="min-width: 40px;">50%</span>
-                        </div>
-                        <div class="volume-control" style="margin-top: 10px;">
                             <label style="min-width: 80px;">YouTube:</label>
                             <input type="range" id="yt-volume" min="0" max="100" value="50" class="form-control">
                             <span id="yt-volume-display" style="min-width: 40px;">50%</span>
@@ -308,6 +346,43 @@ include('navbar.php');
         </div>
         
         <div class="col-lg-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <i class="fas fa-broadcast-tower"></i> Radio &amp; Fernbedienung
+                </div>
+                <div class="panel-body">
+                    <div class="radio-row">
+                        <label for="radio-target">Ziel</label>
+                        <select id="radio-target" class="form-control">
+                            <option value="">Alle Dashboards (global)</option>
+                        </select>
+                    </div>
+                    <p class="radio-hint" id="radio-target-hint">Gilt für alle Dashboards ohne eigene Einstellung.</p>
+                    <div class="toggle-container">
+                        <label><i class="fas fa-music"></i> Radio</label>
+                        <label class="switch">
+                            <input type="checkbox" id="radio-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="toggle-status" id="radio-status">Off</span>
+                    </div>
+                    <div class="radio-row">
+                        <label for="radio-station">Sender</label>
+                        <select id="radio-station" class="form-control"></select>
+                    </div>
+                    <div class="radio-row">
+                        <label for="radio-volume">Lautstärke</label>
+                        <input type="range" id="radio-volume" min="0" max="100" value="50">
+                        <span id="radio-volume-display" style="min-width: 40px; text-align: right;">50%</span>
+                    </div>
+                    <div class="radio-actions">
+                        <button class="btn btn-default" id="songtitle-btn"><i class="fas fa-info-circle"></i> Songtitel zeigen</button>
+                        <button class="btn btn-default" id="radio-reset" disabled><i class="fas fa-undo"></i> Auf global zurück</button>
+                        <button class="btn btn-default" onclick="sendCommand('!bus start')"><i class="fas fa-bus"></i> Bus losschicken</button>
+                        <button class="btn btn-default" onclick="sendCommand('!bus end')"><i class="fas fa-hand-paper"></i> Bus stoppen</button>
+                    </div>
+                </div>
+            </div>
             <div class="panel panel-success">
                 <div class="panel-heading">
                     <i class="fas fa-info-circle"></i> System Status
@@ -518,6 +593,77 @@ include('navbar.php');
         }
     }
     
+    var lastUpdate = null;
+    var radioEditing = false;
+    var stationIcons = {};
+
+    function loadStations() {
+        $.getJSON(DASHBOARD_CONFIG.DASHBOARD_BASE_URL + '/websocket/streams.php', function (data) {
+            var select = $('#radio-station').empty();
+            $.each(data || [], function (i, entry) {
+                stationIcons[entry.RadioURL] = entry.RadioImage;
+                select.append($('<option></option>').attr('value', entry.RadioURL).text(entry.RadioName));
+            });
+            renderRadioPanel();
+        });
+    }
+
+    function fillRadioTargets(names) {
+        var select = $('#radio-target');
+        var current = select.val();
+        var known = {};
+        $.each(names, function (i, n) { known[n] = true; });
+        // Dashboards mit eigener Einstellung auch zeigen, wenn sie gerade offline sind
+        if (lastUpdate && lastUpdate.DeviceRadio) {
+            $.each(lastUpdate.DeviceRadio, function (n) { known[n] = true; });
+        }
+        select.find('option:not(:first)').remove();
+        $.each(Object.keys(known).sort(), function (i, n) {
+            select.append($('<option></option>').attr('value', n).text(n));
+        });
+        select.val(known[current] ? current : '');
+        renderRadioPanel();
+    }
+
+    /** Radio-Einstellung an das gewählte Ziel senden: global per !var, einzelnes Dashboard per !dvar. */
+    function sendRadio(name, value) {
+        var target = $('#radio-target').val();
+        var encoded = encodeURIComponent(String(value));
+        if (target) {
+            sendCommand('!dvar ' + encodeURIComponent(target) + ' ' + name + ' ' + encoded);
+        } else {
+            sendCommand('!var ' + name + ' ' + encoded);
+        }
+    }
+
+    /** Zeigt die Werte des gewählten Ziels (eigene Einstellung des Dashboards, sonst global). */
+    function renderRadioPanel() {
+        if (!lastUpdate) return;
+        var target = $('#radio-target').val();
+        var own = target && lastUpdate.DeviceRadio ? lastUpdate.DeviceRadio[target] : null;
+        var pick = function (key) { return own && own[key] !== undefined ? own[key] : lastUpdate[key]; };
+        var radioOn = pick('Radio');
+        radioOn = radioOn === true || radioOn === 'true' || radioOn === 'True';
+        var toggle = $('#radio-toggle');
+        toggle.data('updating', true).prop('checked', radioOn).data('updating', false);
+        $('#radio-status').text(radioOn ? 'On' : 'Off');
+        var station = pick('Radiostation');
+        var stationSelect = $('#radio-station');
+        if (stationSelect.find('option').filter(function () { return this.value === station; }).length === 0 && station) {
+            stationSelect.append($('<option></option>').attr('value', station).text(station));
+        }
+        if (!stationSelect.is(':focus')) stationSelect.val(station);
+        if (!radioEditing) {
+            var vol = Math.round(Number(pick('Radiovolume')) * 100);
+            $('#radio-volume').val(vol);
+            $('#radio-volume-display').text(vol + '%');
+        }
+        $('#radio-reset').prop('disabled', !own);
+        $('#radio-target-hint').text(!target
+            ? 'Gilt für alle Dashboards ohne eigene Einstellung.'
+            : own ? 'Eigene Einstellung für ' + target + ' aktiv.' : target + ' folgt der globalen Einstellung – Änderungen hier gelten nur für dieses Dashboard.');
+    }
+
     function updateWSStatus(connected) {
         var indicator = document.getElementById('ws-indicator');
         var statusText = document.getElementById('ws-status-text');
@@ -553,13 +699,35 @@ include('navbar.php');
         
         // Volume sliders
         $('#radio-volume').on('input', function() {
-            var vol = $(this).val();
-            $('#radio-volume-display').text(vol + '%');
+            radioEditing = true;
+            $('#radio-volume-display').text($(this).val() + '%');
         });
-        
+
         $('#radio-volume').on('change', function() {
-            var vol = $(this).val() / 100;
-            sendCommand('!var Radiovolume ' + vol);
+            radioEditing = false;
+            sendRadio('Radiovolume', $(this).val() / 100);
+        });
+
+        // Radio & Fernbedienung (ehemals /control)
+        loadStations();
+        $('#radio-target').on('change', function () {
+            renderRadioPanel();
+        });
+        $('#radio-station').on('change', function () {
+            var url = this.value;
+            if (!url) return;
+            sendRadio('Radiostation', url);
+            if (stationIcons[url]) sendRadio('RadioStationIcon', stationIcons[url]);
+        });
+        $('#radio-reset').click(function () {
+            var target = $('#radio-target').val();
+            if (target) sendCommand('!dvar ' + encodeURIComponent(target) + ' reset');
+        });
+        $('#songtitle-btn').click(function () {
+            sendCommand('!songtitle now');
+        });
+        $('#spooky-mode button').click(function () {
+            sendCommand('!var Spooky ' + $(this).data('mode'));
         });
         
         $('#yt-volume').on('input', function() {
@@ -690,14 +858,12 @@ include('navbar.php');
                     };
                     
                     var funOn = updateToggle('#fun-toggle', msg.FUN);
-                    var radioOn = updateToggle('#radio-toggle', msg.Radio);
                     var snowOn = updateToggle('#snow-toggle', msg.Snow);
                     var wheelOn = updateToggle('#wheel-toggle', msg.Wheel);
                     var cycleOn = updateToggle('#cycle-toggle', msg.Cycle);
                     
                     // Update status labels
                     $('#fun-status').text(funOn ? 'On' : 'Off');
-                    $('#radio-status').text(radioOn ? 'On' : 'Off');
                     $('#snow-status').text(snowOn ? 'On' : 'Off');
                     $('#wheel-status').text(wheelOn ? 'On' : 'Off');
                     $('#cycle-status').text(cycleOn ? 'On' : 'Off');
@@ -709,15 +875,16 @@ include('navbar.php');
                         $('#wheel-controls').slideUp();
                     }
                     
-                    $('#Radiostation').html(msg.Radiostation || '-');
-                    $('#SongTitle').html(msg.SongTitle || '-');
+                    $('#Radiostation').text(msg.Radiostation || '-');
+                    $('#SongTitle').text(msg.SongTitle || '-');
+                    lastUpdate = msg;
+                    renderRadioPanel();
+                    var spooky = msg.Spooky || 'auto';
+                    $('#spooky-mode button').each(function () {
+                        $(this).toggleClass('active', $(this).data('mode') === spooky).attr('aria-pressed', $(this).data('mode') === spooky);
+                    });
                     
                     // Update volume sliders
-                    if (msg.Radiovolume !== undefined) {
-                        var radioVol = Math.round(msg.Radiovolume * 100);
-                        $('#radio-volume').val(radioVol);
-                        $('#radio-volume-display').text(radioVol + '%');
-                    }
                     if (msg.YTvolume !== undefined) {
                         var ytVol = Math.round(msg.YTvolume * 100);
                         $('#yt-volume').val(ytVol);
@@ -738,6 +905,7 @@ include('navbar.php');
                 }
                 
                 if (type == 'dashboardlist') {
+                    fillRadioTargets(msg.dashboards || []);
                     var dashboardDiv = document.getElementById("dashboardlist");
                     
                     if (msg.dashboards && msg.dashboards.length > 0) {
@@ -745,7 +913,7 @@ include('navbar.php');
                         msg.dashboards.forEach(function(dashboard) {
                             html += '<div class="info-item">';
                             html += '<i class="fas fa-tv" style="color: #3498db; margin-right: 8px;"></i>';
-                            html += '<strong style="display: inline; color: #ecf0f1;">' + dashboard + '</strong>';
+                            html += '<strong style="display: inline; color: #ecf0f1;">' + $('<span>').text(dashboard).html() + '</strong>';
                             html += '</div>';
                         });
                         html += '</div>';
@@ -812,7 +980,7 @@ include('navbar.php');
         $('#radio-toggle').change(function(e) {
             if (!$(this).data('updating')) {
                 var isChecked = $(this).is(':checked');
-                sendCommand('!var Radio ' + (isChecked ? 'True' : 'False'));
+                sendRadio('Radio', isChecked ? 'True' : 'False');
             }
         });
         

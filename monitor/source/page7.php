@@ -56,7 +56,7 @@ foreach ($issues as $issue) {
 
 ?>
 
-<div class="row">
+<div class="m365-services">
     <?php if (empty($filtered_services)): ?>
         <div class="col-lg-12">
             <div class="alert alert-warning">
@@ -74,7 +74,6 @@ foreach ($issues as $issue) {
                 $icon = getStatusIcon($status);
                 $has_issues = isset($issues_by_service[$service_id]) && count($issues_by_service[$service_id]) > 0;
             ?>
-            <div class="col-lg-1 col-md-2 col-sm-3 col-xs-4">
                 <div class="panel <?php echo $panel_class; ?> m365-service-panel">
                     <div class="panel-heading text-center">
                         <i class="fa <?php echo $icon; ?>"></i>
@@ -88,7 +87,6 @@ foreach ($issues as $issue) {
                         <?php endif; ?>
                     </div>
                 </div>
-            </div>
         <?php endforeach; ?>
     <?php endif; ?>
 </div>
@@ -135,275 +133,138 @@ foreach ($issues as $issue) {
 <?php endif; ?>
 
 <style>
-.m365-service-panel {
-    margin-bottom: 8px;
-    min-height: 85px;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+/* M365: Lesbar aus mehreren Metern – Größen aus den Design-Tokens (Fallbacks für die Legacy-Oberfläche) */
+.m365-services {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-5, 24px);
+}
+.m365-services .m365-service-panel {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    min-height: 5.5rem;
+    margin: 0;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    background: var(--color-surface, #12171d);
+    border: 1px solid var(--color-border, rgba(255,255,255,0.08));
+    border-left-width: 4px;
+    border-radius: var(--radius-md, 12px);
+    overflow: hidden;
 }
-
-.m365-service-panel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-}
-
-/* Dark panels with accent colors */
 .m365-service-panel .panel-heading {
-    padding: 5px;
-    font-size: 18px;
-    background-color: rgba(40, 40, 40, 0.9) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-    min-height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    flex: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: var(--fs-xl, 30px);
+    line-height: 1;
 }
-
+.m365-service-panel .panel-heading .icon { width: 1em; height: 1em; }
 .m365-service-panel .panel-body {
-    background-color: rgba(30, 30, 30, 0.95) !important;
-    padding: 0 !important;
-    color: #e0e0e0 !important;
-    display: flex;
-    flex-direction: column;
     flex: 1;
-    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    text-align: left;
 }
-
 .m365-service-panel .service-name {
-    font-size: 9px;
-    font-weight: 600;
-    margin: 0;
-    padding: 4px 3px;
-    color: #ffffff !important;
-    line-height: 1.1;
-    background-color: rgba(30, 30, 30, 0.95) !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    flex: 1;
+    font-size: var(--fs-md, 17px);
+    font-weight: var(--fw-semibold, 600);
+    line-height: var(--lh-tight, 1.15);
+    color: var(--color-text, #e9edf2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
-
-.m365-service-panel .status-text {
-    font-size: 8px;
-    font-weight: 500;
-    margin: 2px 0 0 0;
-    color: #b0b0b0 !important;
-    display: none;
-}
-
 .m365-service-panel .issue-badge {
-    margin: 0;
-    padding: 3px;
-    font-size: 8px;
-    color: #ff6b6b !important;
-    font-weight: bold;
-    background-color: rgba(40, 40, 40, 0.95) !important;
-    flex-shrink: 0;
+    margin-top: var(--space-1, 4px);
+    font-size: var(--fs-sm, 15px);
+    font-weight: var(--fw-semibold, 600);
+    color: var(--color-danger, #f0584f);
 }
+.panel-success.m365-service-panel { border-left-color: var(--color-success, #3fb27f); }
+.panel-success.m365-service-panel .panel-heading { color: var(--color-success, #3fb27f); }
+.panel-warning.m365-service-panel { border-left-color: var(--color-warning, #e3a535); }
+.panel-warning.m365-service-panel .panel-heading { color: var(--color-warning, #e3a535); }
+.panel-danger.m365-service-panel { border-left-color: var(--color-danger, #f0584f); }
+.panel-danger.m365-service-panel .panel-heading { color: var(--color-danger, #f0584f); }
+.panel-default.m365-service-panel { border-left-color: var(--color-info, #5fb3f6); }
+.panel-default.m365-service-panel .panel-heading { color: var(--color-info, #5fb3f6); }
 
-/* Success - Green accent */
-.panel-success.m365-service-panel {
-    border-left: 3px solid #2ECC71 !important;
-}
-.panel-success.m365-service-panel .panel-heading {
-    color: #2ECC71 !important;
-}
-
-/* Warning - Orange accent */
-.panel-warning.m365-service-panel {
-    border-left: 3px solid #F1C40F !important;
-}
-.panel-warning.m365-service-panel .panel-heading {
-    color: #F1C40F !important;
-}
-
-/* Danger - Red accent */
-.panel-danger.m365-service-panel {
-    border-left: 3px solid #E74C3C !important;
-}
-.panel-danger.m365-service-panel .panel-heading {
-    color: #E74C3C !important;
-}
-
-/* Default - Blue accent */
-.panel-default.m365-service-panel {
-    border-left: 3px solid #337ab7 !important;
-}
-.panel-default.m365-service-panel .panel-heading {
-    color: #337ab7 !important;
-}
-
-/* Issue panels - dark theme */
-.m365-issue-panel {
-    margin-bottom: 15px;
-    background-color: rgba(40, 40, 40, 0.8) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-}
-
-.m365-issue-panel .panel-heading {
-    background-color: rgba(50, 50, 50, 0.9) !important;
-    color: #fff !important;
-    border-color: rgba(255,255,255,0.1) !important;
-}
-
-.m365-issue-panel .panel-body {
-    background-color: rgba(30, 30, 30, 0.9) !important;
-    color: #e0e0e0 !important;
-}
-
-.service-issue-header {
-    margin-top: 20px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255,255,255,0.2);
-    color: #fff !important;
-}
-
-.issue-description {
-    font-size: 13px;
-    line-height: 1.6;
-    max-height: 200px;
-    overflow-y: auto;
-    color: #d0d0d0 !important;
-}
-
-.issue-meta {
-    font-size: 12px;
-    background-color: rgba(50, 50, 50, 0.6);
-    color: #d0d0d0 !important;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.issue-meta p {
-    margin-bottom: 8px;
-    color: #d0d0d0 !important;
-}
-
-.issue-meta strong {
-    display: inline-block;
-    width: 120px;
-    color: #ffffff !important;
-}
-
-/* Compact Issues Grid - TV optimized */
 .issues-section-header {
-    font-size: 16px;
-    font-weight: 700;
-    color: #fff !important;
-    margin-bottom: 15px;
-    padding: 10px 0;
-    border-bottom: 2px solid rgba(255,255,255,0.2);
+    margin-bottom: var(--space-3, 12px);
+    font-size: var(--fs-lg, 22px);
+    font-weight: var(--fw-semibold, 600);
+    color: var(--color-text, #e9edf2);
 }
-
-.issues-section-header i {
-    color: #F1C40F;
-    margin-right: 8px;
-}
-
+.issues-section-header .icon,
+.issues-section-header i { color: var(--color-warning, #e3a535); margin-right: var(--space-2, 8px); }
 .issues-compact-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3, 12px);
 }
-
-.issue-compact-card {
-    background-color: rgba(40, 40, 40, 0.95) !important;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 4px;
-    padding: 10px;
-    transition: all 0.2s ease;
+.issues-compact-grid .issue-compact-card {
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    background: var(--color-surface, #12171d);
+    border: 1px solid var(--color-border, rgba(255,255,255,0.08));
+    border-left-width: 4px;
+    border-radius: var(--radius-md, 12px);
 }
-
-.issue-compact-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-
-.issue-danger {
-    border-left: 3px solid #E74C3C !important;
-}
-
-.issue-warning {
-    border-left: 3px solid #F1C40F !important;
-}
-
-.issue-default {
-    border-left: 3px solid #3498DB !important;
-}
-
+.issue-danger { border-left-color: var(--color-danger, #f0584f); }
+.issue-warning { border-left-color: var(--color-warning, #e3a535); }
+.issue-default { border-left-color: var(--color-info, #5fb3f6); }
 .issue-compact-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-2, 8px);
 }
-
 .issue-service-name {
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff !important;
+    font-size: var(--fs-sm, 15px);
+    font-weight: var(--fw-semibold, 600);
+    color: var(--color-text-secondary, #a3acb9);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04em;
 }
-
 .issue-classification {
-    font-size: 9px;
-    padding: 2px 6px;
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 3px;
-    color: #fff !important;
-    font-weight: 600;
+    flex: none;
+    padding: 0 var(--space-2, 8px);
+    border-radius: var(--radius-pill, 999px);
+    background: rgba(255,255,255,0.08);
+    font-size: var(--fs-xs, 13px);
+    font-weight: var(--fw-semibold, 600);
+    line-height: 1.6;
 }
-
 .issue-compact-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: #e0e0e0 !important;
-    margin-bottom: 6px;
-    line-height: 1.3;
+    margin-bottom: var(--space-2, 8px);
+    font-size: var(--fs-md, 17px);
+    font-weight: var(--fw-medium, 500);
+    line-height: var(--lh-normal, 1.4);
+    color: var(--color-text, #e9edf2);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-
 .issue-compact-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 10px;
-    color: #b0b0b0 !important;
+    font-size: var(--fs-sm, 15px);
+    color: var(--color-text-secondary, #a3acb9);
+    font-variant-numeric: tabular-nums;
 }
-
-.issue-compact-meta i {
-    margin-right: 4px;
-}
-
+.issue-compact-meta .icon,
+.issue-compact-meta i { margin-right: var(--space-1, 4px); }
 .issue-status {
-    padding: 2px 6px;
-    background-color: rgba(255,255,255,0.05);
-    border-radius: 3px;
-    font-weight: 600;
-}
-
-/* Badge styling */
-.badge-danger {
-    background-color: #d9534f;
-    color: #fff !important;
-}
-
-/* Panel primary styling */
-.panel-primary > .panel-heading {
-    background-color: rgba(51, 122, 183, 0.2) !important;
-    border-color: #337ab7 !important;
-    color: #fff !important;
+    padding: 0 var(--space-2, 8px);
+    border-radius: var(--radius-pill, 999px);
+    background: rgba(255,255,255,0.06);
+    font-weight: var(--fw-semibold, 600);
 }
 </style>

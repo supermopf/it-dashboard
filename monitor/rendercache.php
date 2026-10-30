@@ -6,6 +6,7 @@
  * Time: 12:41
  */
 require(getenv('DASHBOARD_CONFIG') ?: __DIR__ . '/../config.php');
+require_once(__DIR__ . '/../lib/pages.php');
 $conn = sqlsrv_connect(DASHBOARD_SQL_INSTANCE, $Default_Connection);
 
 $root = DASHBOARD_BASE_URL . "/monitor/source/";
@@ -79,19 +80,23 @@ function checkPageHasData($pageNumber) {
             }
             return false;
         
-        case 6: // Backup - Check for failed backups
+        case 6: // Backup – überspringen, wenn die Erfolgsquote 100 % beträgt (gleiche Rundung wie page6.php)
             if ($conn) {
                 $result = sqlsrv_query($conn, "
-                    SELECT COUNT(*) as count 
-                    FROM [IT-Dashboard].[dbo].[IT-Dashboard_Backup_Failed] 
-                    WHERE [pullTime] > DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0)
+                    SELECT TOP 1 [Successful], [Partially Successful] AS Partial, [Failed]
+                    FROM [IT-Dashboard].[dbo].[IT-Dashboard_Backup_Status]
+                    ORDER BY [Timestamp] DESC
                 ");
                 if ($result) {
                     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    return $row['count'] > 0; // Failed backups = Warning
+                    if (!$row) {
+                        return true;
+                    }
+                    $total = (float)$row['Successful'] + (float)$row['Partial'] + (float)$row['Failed'];
+                    return $total <= 0 || round((float)$row['Successful'] / $total * 100, 2) < 100;
                 }
             }
-            return false;
+            return true;
         
         case 7: // M365 Service Health - Check for active issues
             // This would require checking M365 API status
@@ -122,20 +127,8 @@ function checkPageHasData($pageNumber) {
             }
             return false;
         
-        case 10: // Julianometer
-            if ($conn) {
-                $result = sqlsrv_query($conn, "
-                    SELECT COUNT(*) as count 
-                    FROM [IT-Dashboard].[dbo].[IT-Dashboard_Julianometer] 
-                    WHERE Year(Timestamp) = Year(CURRENT_TIMESTAMP) 
-                    AND Month(Timestamp) = Month(CURRENT_TIMESTAMP)
-                ");
-                if ($result) {
-                    $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
-                    return $row['count'] > 0; // Has entries this month
-                }
-            }
-            return false;
+        case 10: // Julianometer – das Zeitfenster (Mo/Di/Fr 12–18 Uhr) prüft server.php, siehe lib/pages.php
+            return true;
         
         default:
             // Unknown pages always show
@@ -200,7 +193,9 @@ foreach ($pages as $page) {
     preg_match('/page(\d+)\.php/', $page, $matches);
     if (isset($matches[1])) {
         $pageNumber = (int)$matches[1];
-        $hasData = checkPageHasData($pageNumber);
+        // Vorrang hat die Markierung der Seite selbst (lib/pages.php) – sie kennt den tatsächlichen Inhalt.
+        $marker = $invalid === null ? page_relevance_from_html($content) : null;
+        $hasData = $marker !== null ? $marker : checkPageHasData($pageNumber);
         $pageStatus[$pageNumber] = array(
             'hasData' => $hasData,
             'lastCheck' => time()

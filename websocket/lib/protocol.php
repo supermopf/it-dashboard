@@ -101,6 +101,7 @@ function ws_var_whitelist(): array
         'RadioStationIcon' => 'text',
         'SongTitle' => 'text',
         'CycleTime' => 'cycle',
+        'Spooky' => 'mode',
     );
 }
 
@@ -137,6 +138,9 @@ function ws_parse_var(string $message): ?array
                 return null;
             }
             return array($name, max(10, min(3600, (int)$raw)));
+        case 'mode':
+            $l = strtolower($raw);
+            return in_array($l, array('auto', 'on', 'off'), true) ? array($name, $l) : null;
         case 'url':
             $v = urldecode($raw);
             return validate_http_url($v) !== null || $v === '' ? array($name, $v) : null;

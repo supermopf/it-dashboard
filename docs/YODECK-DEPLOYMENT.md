@@ -45,7 +45,7 @@ Vor der Auslieferung empfohlen: `npm run check` (Lint, Typecheck, Unit-, PHP- un
 | `fileinfo` | Typprüfung der Toast-Medien |
 | `mbstring` | Validierung der REST-API |
 | `ldap` | `websocket/adphoto.php` |
-| `gd` | `websocket/weather.php` (Radarbild) |
+| `gd` | nicht mehr benötigt (Radarbild entfällt, siehe MIGRATION.md) |
 
 ## 3. Deployment-Verzeichnis und Dateien
 
@@ -94,7 +94,6 @@ php C:\inetpub\dashboard\websocket\server.php
 |---|---|---|
 | Seiten-Cache | `php C:\inetpub\dashboard\monitor\rendercache.php` | **prüfen** (bisheriges Intervall nicht im Repo; empfohlen 1–2 min, kürzer als ein Rotationsdurchlauf von 5 min) |
 | Songtitel | `php C:\inetpub\dashboard\websocket\songtitle.php` | **prüfen** (z. B. 30 s – 1 min, nur sinnvoll bei laufendem Radio) |
-| Radarbild | `php C:\inetpub\dashboard\websocket\weather.php` | **prüfen** (z. B. 10 min) |
 
 `rendercache.php` holt die Seiten per HTTP (`DASHBOARD_BASE_URL/monitor/source/…`), schreibt sie jetzt atomar
 und behält bei Fehlern die letzte gültige Version.

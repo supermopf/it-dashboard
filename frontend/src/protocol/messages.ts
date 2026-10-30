@@ -5,6 +5,9 @@
 
 export type PageStatusValue = 'warning' | 'ok';
 
+/** Gruselmodus: auto = nachts (Zeitfenster aus der Konfiguration), on/off = manuell (!var Spooky). */
+export type SpookyMode = 'auto' | 'on' | 'off';
+
 export interface ServerUpdate {
   Page: number | null;
   FUN: boolean;
@@ -21,6 +24,7 @@ export interface ServerUpdate {
   SongTitle: string;
   RadioStationIcon: string;
   PageStatus: Record<string, PageStatusValue>;
+  Spooky: SpookyMode;
 }
 
 export type ServerMessage =
@@ -64,6 +68,7 @@ export function parseUpdate(m: Record<string, unknown>): ServerUpdate {
     SongTitle: str(m.SongTitle).slice(0, 300),
     RadioStationIcon: str(m.RadioStationIcon),
     PageStatus: status,
+    Spooky: m.Spooky === 'on' || m.Spooky === 'off' ? m.Spooky : 'auto',
   };
 }
 

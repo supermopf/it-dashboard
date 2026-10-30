@@ -22,6 +22,8 @@ export interface DashboardConfig {
   maxActiveVideos: number;
   chartAnimation: boolean;
   snowFlakes: number;
+  /** Gruselmodus im Modus „auto“: aktiv von `from` bis `to` Uhr (über Mitternacht möglich). */
+  spooky: { from: number; to: number };
   /** 'reload-only': nur der Legacy-Reload-Toast wird ausgeführt; 'legacy': Skripte im ToastBody ausführen (unsicher). */
   toastScripts: 'reload-only' | 'legacy';
   recovery: {
@@ -60,6 +62,7 @@ export const DEFAULT_CONFIG: DashboardConfig = {
   maxActiveVideos: 1,
   chartAnimation: false,
   snowFlakes: 60,
+  spooky: { from: 20, to: 6 },
   toastScripts: 'reload-only',
   recovery: { enabled: true, wsDownMs: 10 * 60 * 1000, maxReloadsPerHour: 3, heapLimitMb: 0 },
   wsWatchdogMs: 10000,
@@ -81,6 +84,7 @@ export function readConfig(doc: Document = document, search: string = location.s
     ...DEFAULT_CONFIG,
     ...raw,
     recovery: { ...DEFAULT_CONFIG.recovery, ...(raw.recovery ?? {}) },
+    spooky: { ...DEFAULT_CONFIG.spooky, ...(raw.spooky ?? {}) },
     pages: Array.isArray(raw.pages) && raw.pages.length ? raw.pages : DEFAULT_PAGES,
   };
   const params = new URLSearchParams(search);

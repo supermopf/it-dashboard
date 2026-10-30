@@ -160,5 +160,23 @@ check('Rate Limit pro Schlüssel', rate_limit_allow('test', '5.6.7.8', 5, 60, $r
 array_map('unlink', glob("$rlDir/*") ?: array());
 @rmdir($rlDir);
 
+echo "\nSeiten-Relevanz und Zeitfenster\n";
+require_once __DIR__ . '/../../lib/pages.php';
+check('Markierung relevant=0', page_relevance_from_html('<div></div>' . page_relevance_marker(false)) === false);
+check('Markierung relevant=1', page_relevance_from_html(page_relevance_marker(true) . '<p>x</p>') === true);
+check('Ohne Markierung → null', page_relevance_from_html('<p>x</p>') === null);
+$julian = array(10 => array('days' => array(1, 2, 5), 'from' => '12:00', 'to' => '18:00'));
+check('Julian: Montag 12:00 sichtbar', page_schedule_allows(10, strtotime('2026-10-26 12:00'), $julian));
+check('Julian: Dienstag 17:59 sichtbar', page_schedule_allows(10, strtotime('2026-10-27 17:59'), $julian));
+check('Julian: Freitag 18:00 übersprungen', !page_schedule_allows(10, strtotime('2026-10-30 18:00'), $julian));
+check('Julian: Montag 11:59 übersprungen', !page_schedule_allows(10, strtotime('2026-10-26 11:59'), $julian));
+check('Julian: Mittwoch übersprungen', !page_schedule_allows(10, strtotime('2026-10-28 14:00'), $julian));
+check('Seite ohne Zeitfenster immer sichtbar', page_schedule_allows(5, strtotime('2026-10-28 03:00'), $julian));
+
+echo "\nGruselmodus-Variable\n";
+check('!var Spooky on', ws_parse_var('!var Spooky on') === array('Spooky', 'on'));
+check('!var Spooky AUTO', ws_parse_var('!var Spooky AUTO') === array('Spooky', 'auto'));
+check('!var Spooky ungültig', ws_parse_var('!var Spooky maybe') === null);
+
 echo "\n$passed bestanden, $failed fehlgeschlagen\n";
 exit($failed === 0 ? 0 : 1);

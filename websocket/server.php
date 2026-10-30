@@ -65,6 +65,8 @@ include(getenv('DASHBOARD_CONFIG') ?: __DIR__ .'/../config.php');
 require_once(__DIR__ . '/db_helper.php');
 require_once(__DIR__ . '/lib/protocol.php');
 require_once(__DIR__ . '/../lib/security.php');
+require_once(__DIR__ . '/../lib/pages.php');
+require_once(__DIR__ . '/../lib/weather.php');
 
 $host = DASHBOARD_DOMAIN; //host
 $port = defined('WEBSOCKET_PORT') ? (string)WEBSOCKET_PORT : '9000'; //port
@@ -107,6 +109,11 @@ $ForwardedIP = "";
 $SongTitle = "";
 $PageStatusCache = LoadPageStatus();
 $LastPageStatusLoad = time();
+$Spooky = 'auto'; // Gruselmodus: auto (nachts, Zeitfenster im Frontend) | on | off
+$SongTitles = array(); // Sender-URL => aktueller Titel (songtitle.php: !var SongTitle / !stitle)
+// Radio je Dashboard (?Name=…): abweichender Sender/Lautstärke/An-Aus, gesetzt per !dvar, überlebt Neustarts
+$DeviceRadioFile = __DIR__ . '/device_radio.json';
+$DeviceRadio = LoadDeviceRadio($DeviceRadioFile);
 
 define("Debug", True);
 /*
@@ -205,7 +212,71 @@ function LoadPageStatus() {
     return array();
 }
 
+/** Variablen, die ein Dashboard per !dvar abweichend von der globalen Einstellung setzen darf. */
+function DeviceRadioVars() {
+    return array('Radio', 'Radiostation', 'RadioStationIcon', 'Radiovolume');
+}
+
+function LoadDeviceRadio($file) {
+    $data = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
+    if (!is_array($data)) {
+        return array();
+    }
+    $out = array();
+    foreach ($data as $name => $settings) {
+        if (is_string($name) && is_array($settings)) {
+            $out[$name] = array_intersect_key($settings, array_flip(DeviceRadioVars()));
+        }
+    }
+    return $out;
+}
+
+function SaveDeviceRadio($file, $deviceRadio) {
+    @file_put_contents($file, json_encode((object)$deviceRadio, JSON_PRETTY_PRINT), LOCK_EX);
+}
+
+/**
+ * Sendet das sekündliche Update. Dashboards mit eigener Radio-Einstellung (!dvar) bekommen ihre Werte
+ * eingesetzt – inkl. passendem Songtitel ihres Senders. Alle anderen Clients erhalten das globale Update.
+ */
+function send_update(array $base) {
+    global $clients, $dashboards, $DeviceRadio, $SongTitles;
+
+    $base['DeviceRadio'] = (object)$DeviceRadio;
+    $plain = mask(json_encode($base));
+    if (!$DeviceRadio) {
+        send_message($plain);
+        return;
+    }
+    $frames = array();
+    foreach ($clients as $client) {
+        if ($client === $clients[0] || !($client instanceof \Socket || is_resource($client))) {
+            continue;
+        }
+        $name = $dashboards[resource_id($client)]['name'] ?? null;
+        $frame = $plain;
+        if ($name !== null && isset($DeviceRadio[$name])) {
+            if (!isset($frames[$name])) {
+                $merged = $base;
+                foreach ($DeviceRadio[$name] as $var => $value) {
+                    $merged[$var] = is_bool($value) ? ($value ? 'true' : 'false') : $value;
+                }
+                if ($merged['Radiostation'] !== $base['Radiostation']) {
+                    $merged['SongTitle'] = $SongTitles[$merged['Radiostation']] ?? '';
+                }
+                $frames[$name] = mask(json_encode($merged));
+            }
+            $frame = $frames[$name];
+        }
+        @socket_write($client, $frame, strlen($frame));
+    }
+}
+
 function PageHasData($pageNumber, $pageStatusCache) {
+    // Zeitfenster (z. B. Julian-O-Meter nur Mo/Di/Fr 12–18 Uhr), siehe lib/pages.php
+    if (!page_schedule_allows((int)$pageNumber)) {
+        return false;
+    }
     // Use cached status from rendercache.php
     // For monitoring pages: hasData = true means alerts exist (bad, don't skip)
     // hasData = false means no alerts (good, but we skip empty pages)
@@ -323,20 +394,13 @@ while (true) {
 				$Page = 1;
 				//Check for Snow
 				try {
-					// Timeout, damit ein hängender Wetterdienst nicht alle Clients blockiert (AUDIT S7).
-					$weatherCtx = stream_context_create(array('http' => array('timeout' => 3)));
-					$json = @file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=Isernhagen,de&APPID='.APIKEY_openweathermap.'&lang=de', false, $weatherCtx);
-					if ($json !== false) {
-						$oIsernhagen = json_decode($json);
-						if ($oIsernhagen && isset($oIsernhagen->weather[0]->description)) {
-							if (strpos($oIsernhagen->weather[0]->description, "chnee") !== false) {
-								$Snow = True;
-							} else {
-								$Snow = False;
-							}
-						}
+					// lib/weather.php: gleiche Quelle wie die Temperaturseite (Yahoo/OpenWeatherMap), 10 min Cache,
+					// kurze Timeouts, damit ein hängender Wetterdienst nicht alle Clients blockiert (AUDIT S7).
+					$weather = weather_current();
+					if ($weather !== null) {
+						$Snow = !empty($weather['snow']);
 					}
-				} catch (Exception $e) {
+				} catch (Throwable $e) {
 					LogDebug("Weather API error: " . $e->getMessage(), 1);
 				}
 			} else {
@@ -368,8 +432,14 @@ while (true) {
         // Prepare page status for client
         $pageStatusForClient = array();
         foreach ($PageStatusCache as $pageNum => $status) {
-            // hasData = true means alerts exist (warning), false means no alerts (ok)
-            $pageStatusForClient[$pageNum] = $status['hasData'] ? 'warning' : 'ok';
+            // hasData = true means alerts exist (warning), false means no alerts (ok = wird übersprungen).
+            // Inklusive Zeitfenster, damit die Vorhersage des Frontends (predictNextPage) stimmt.
+            $pageStatusForClient[$pageNum] = PageHasData($pageNum, $PageStatusCache) ? 'warning' : 'ok';
+        }
+        foreach (array_keys(page_schedules()) as $pageNum) {
+            if (!isset($pageStatusForClient[$pageNum]) && !page_schedule_allows((int)$pageNum)) {
+                $pageStatusForClient[$pageNum] = 'ok';
+            }
         }
         
         $var_array = array(
@@ -388,10 +458,10 @@ while (true) {
             "Cycle" => $Cycle ? 'true' : 'false',
             "SongTitle" => $SongTitle,
             "RadioStationIcon" => $RadioStationIcon,
-            "PageStatus" => $pageStatusForClient
+            "PageStatus" => $pageStatusForClient,
+            "Spooky" => $Spooky
         );
-        $update = mask(json_encode($var_array));
-        send_message($update);
+        send_update($var_array);
     }
 
     if ($FUN_active == True AND $FUN == False) {
@@ -482,6 +552,42 @@ while (true) {
                         list($varName, $var) = $parsed;
                         LogNormal($varName . " = " . (is_bool($var) ? ($var ? 'True' : 'False') : $var));
                         $$varName = $var;
+                        if ($varName === 'SongTitle') {
+                            $SongTitles[$Radiostation] = $var;
+                        }
+                    }
+                } elseif (substr($user_message, 0, 6) == "!dvar ") {
+                    // !dvar <Dashboard (urlencoded)> <Radio|Radiostation|RadioStationIcon|Radiovolume> <Wert>
+                    // !dvar <Dashboard> reset   → wieder globale Einstellung
+                    $parts = explode(' ', $user_message, 4);
+                    $deviceName = substr(trim(urldecode($parts[1] ?? '')), 0, 64);
+                    $deviceVar = $parts[2] ?? '';
+                    if ($deviceName === '' || strtolower($deviceName) === 'alle') {
+                        LogNormal("!dvar ohne gültigen Dashboard-Namen verworfen");
+                    } elseif ($deviceVar === 'reset') {
+                        unset($DeviceRadio[$deviceName]);
+                        SaveDeviceRadio($DeviceRadioFile, $DeviceRadio);
+                        LogNormal("Radio für Dashboard '$deviceName' auf global zurückgesetzt");
+                    } elseif (in_array($deviceVar, DeviceRadioVars(), true)
+                        && ($parsed = ws_parse_var('!var ' . $deviceVar . ' ' . ($parts[3] ?? ''))) !== null) {
+                        $DeviceRadio[$deviceName][$deviceVar] = $parsed[1];
+                        SaveDeviceRadio($DeviceRadioFile, $DeviceRadio);
+                        LogNormal("Dashboard '$deviceName': $deviceVar = " . (is_bool($parsed[1]) ? ($parsed[1] ? 'True' : 'False') : $parsed[1]));
+                    } else {
+                        LogNormal("!dvar abgelehnt: " . substr($user_message, 0, 80));
+                    }
+                } elseif (substr($user_message, 0, 8) == "!stitle ") {
+                    // !stitle <Sender-URL (urlencoded)> <Titel (urlencoded)> – von songtitle.php für Dashboard-Sender
+                    $parts = explode(' ', $user_message, 3);
+                    $station = urldecode($parts[1] ?? '');
+                    if (validate_http_url($station) !== null) {
+                        if (count($SongTitles) > 50) {
+                            $SongTitles = array();
+                        }
+                        $SongTitles[$station] = substr(urldecode($parts[2] ?? ''), 0, 1024);
+                        if ($station === $Radiostation) {
+                            $SongTitle = $SongTitles[$station];
+                        }
                     }
                 } elseif (substr($user_message, 0, 4) == "!reg") {
                     $name = "";
